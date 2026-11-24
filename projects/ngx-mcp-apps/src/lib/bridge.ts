@@ -55,6 +55,8 @@ export interface McpBridgeOptions {
   timeout?: number;
   /** App capabilities sent during `ui/initialize`. Default: {}. */
   appCapabilities?: Record<string, unknown>;
+  /** Called when a notification handler throws. Default: console.error. */
+  onError?: (error: unknown, method: string) => void;
 }
 
 /**
@@ -68,6 +70,7 @@ export class McpBridge {
   private readonly notificationHandlers = new Map<string, NotificationHandler>();
   private readonly unlisten: () => void;
   private stopResize?: () => void;
+  private closed = false;
 
   constructor(
     private readonly port: McpPort,
@@ -92,6 +95,7 @@ export class McpBridge {
   }
 
   request<T = unknown>(method: string, params?: unknown): Promise<T> {
+    if (this.closed) return Promise.reject(new McpError(-32000, 'Bridge closed'));
     const id = this.nextId++;
     return new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -99,11 +103,19 @@ export class McpBridge {
         reject(new McpError(-32001, `Request timed out: ${method}`));
       }, this.options.timeout ?? 60000);
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer });
-      this.port.post({ jsonrpc: '2.0', id, method, ...(params === undefined ? {} : { params }) });
+      try {
+        this.port.post({ jsonrpc: '2.0', id, method, ...(params === undefined ? {} : { params }) });
+      } catch (e) {
+        // e.g. DataCloneError: fail now instead of waiting for the timeout
+        clearTimeout(timer);
+        this.pending.delete(id);
+        reject(new McpError(-32603, `Could not send ${method}: ${e instanceof Error ? e.message : String(e)}`));
+      }
     });
   }
 
   notify(method: string, params?: unknown): void {
+    if (this.closed) return;
     this.port.post({ jsonrpc: '2.0', method, ...(params === undefined ? {} : { params }) });
   }
 
@@ -153,6 +165,8 @@ export class McpBridge {
   }
 
   close(): void {
+    if (this.closed) return;
+    this.closed = true;
     this.unlisten();
     this.stopResize?.();
     for (const [, p] of this.pending) {
@@ -185,7 +199,14 @@ export class McpBridge {
     }
 
     // Notification from the host
-    this.notificationHandlers.get(message.method)?.(message.params);
+    const handler = this.notificationHandlers.get(message.method);
+    if (!handler) return;
+    try {
+      handler(message.params);
+    } catch (e) {
+      const report = this.options.onError ?? ((err: unknown, m: string) => console.error(`[ngx-mcp-apps] ${m} handler failed`, err));
+      report(e, message.method);
+    }
   }
 
   private async answer(id: JsonRpcId, method: string, params: unknown): Promise<void> {

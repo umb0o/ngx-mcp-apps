@@ -1,15 +1,15 @@
-import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, Injector, Signal, computed, inject, signal } from '@angular/core';
 import { McpBridge, McpError, McpPort, parentWindowPort } from './bridge';
 import {
   isCallToolResult,
   isDisplayModeResult,
-  isHostContext,
   isInitializeResult,
   isRefusableResult,
   isToolInputParams,
+  sanitizeHostContext,
 } from './guards';
 import { MCP_APP_CONFIG } from './mcp-app.config';
-import { McpCallToolResult, McpDisplayMode, McpHostCapabilities, McpHostContext, Methods } from './protocol';
+import { McpCallToolResult, McpDisplayMode, McpHostCapabilities, McpHostContext, Methods, PROTOCOL_VERSION } from './protocol';
 
 export type McpAppStatus = 'connecting' | 'connected' | 'standalone';
 
@@ -23,6 +23,8 @@ export interface PollOptions<T> {
   args?: Record<string, unknown>;
   /** Check each `structuredContent`: invalid values are dropped and logged, the signal keeps the last valid one. */
   guard?: McpGuard<T>;
+  /** Injector that owns the polling (it stops when destroyed). Needed outside an injection context, e.g. in ngOnInit. */
+  injector?: Injector;
 }
 
 /**
@@ -77,6 +79,7 @@ export class McpApp {
     }
     const bridge = new McpBridge(port, { name: this.config.name, version: this.config.version }, {
       timeout: this.config.requestTimeout,
+      onError: (e, method) => this.log(`${method} handler failed`, e instanceof Error ? e.message : e),
     });
     this.bridge = bridge;
 
@@ -84,6 +87,7 @@ export class McpApp {
     bridge.onNotification(Methods.toolInput, (p: unknown) => {
       if (!this.valid(p, isToolInputParams, 'tool-input')) return;
       this.log('tool-input', p.arguments);
+      this._toolCancelled.set(false);
       this._toolInput.set(p.arguments ?? {});
     });
     bridge.onNotification(Methods.toolInputPartial, (p: unknown) => {
@@ -92,6 +96,7 @@ export class McpApp {
     bridge.onNotification(Methods.toolResult, (p: unknown) => {
       if (!this.valid(p, isCallToolResult, 'tool-result')) return;
       this.log('tool-result', p.structuredContent);
+      this._toolCancelled.set(false);
       this._toolResult.set(p);
     });
     bridge.onNotification(Methods.toolCancelled, (p) => {
@@ -99,9 +104,10 @@ export class McpApp {
       this._toolCancelled.set(true);
     });
     bridge.onNotification(Methods.hostContextChanged, (p: unknown) => {
-      if (!this.valid(p, isHostContext, 'host-context')) return;
-      this.log('host-context', p);
-      this._hostContext.update((prev) => ({ ...prev, ...p }));
+      const ctx = this.sanitizedContext(p, 'host-context');
+      if (!ctx) return;
+      this.log('host-context', ctx);
+      this._hostContext.update((prev) => ({ ...prev, ...ctx }));
     });
 
     inject(DestroyRef).onDestroy(() => bridge.close());
@@ -158,7 +164,14 @@ export class McpApp {
    * Polling runs while connected and stops when the injection context is destroyed.
    */
   pollServerTool<T = Record<string, unknown>>(name: string, options: PollOptions<T> = {}): Signal<T | undefined> {
-    const { intervalMs = 1000, args = {}, guard } = options;
+    const { intervalMs = 1000, args = {}, guard, injector } = options;
+    // Resolve the owner first, so a misplaced call fails with a clear message instead of NG0203
+    let destroyRef: DestroyRef;
+    try {
+      destroyRef = injector ? injector.get(DestroyRef) : inject(DestroyRef);
+    } catch {
+      throw new Error('pollServerTool() must be called in an injection context (e.g. a field initializer), or given { injector }.');
+    }
     const value = signal<T | undefined>(undefined);
     let busy = false;
     const tick = async () => {
@@ -177,7 +190,7 @@ export class McpApp {
     };
     const timer = setInterval(tick, intervalMs);
     void tick();
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    destroyRef.onDestroy(() => clearInterval(timer));
     return value.asReadonly();
   }
 
@@ -199,8 +212,9 @@ export class McpApp {
       .then((raw) => {
         clearTimeout(timeout);
         const r = this.checked(raw, isInitializeResult, 'ui/initialize result');
+        if (r.protocolVersion !== PROTOCOL_VERSION) this.log('protocol version', `app ${PROTOCOL_VERSION}, host ${r.protocolVersion}`);
         this._hostCapabilities.set(r.hostCapabilities);
-        this._hostContext.set(r.hostContext);
+        this._hostContext.set(this.sanitizedContext(r.hostContext, 'host context') ?? {});
         this._status.set('connected');
         this.log('connected', { host: r.hostInfo, capabilities: r.hostCapabilities });
         if ((this.config.autoResize ?? true) && typeof ResizeObserver !== 'undefined') bridge.startAutoResize();
@@ -216,6 +230,17 @@ export class McpApp {
     if (guard(v)) return true;
     this.log(`invalid ${what} dropped`, v);
     return false;
+  }
+
+  /** Host context: invalid known fields are dropped one by one, the rest is kept. */
+  private sanitizedContext(v: unknown, what: string): McpHostContext | undefined {
+    const r = sanitizeHostContext(v);
+    if (!r) {
+      this.log(`invalid ${what} dropped`, v);
+      return undefined;
+    }
+    if (r.dropped.length) this.log(`${what}: invalid fields dropped`, r.dropped.join(', '));
+    return r.context;
   }
 
   /** Results: an invalid answer becomes a clear error instead of a crash later on. */
@@ -244,7 +269,14 @@ export class McpApp {
   private log(event: string, data?: unknown): void {
     if (!this.config.log) return;
     const time = new Date().toLocaleTimeString();
-    const detail = data === undefined ? '' : ' ' + (typeof data === 'string' ? data : JSON.stringify(data));
+    let detail = '';
+    if (data !== undefined) {
+      try {
+        detail = ' ' + (typeof data === 'string' ? data : JSON.stringify(data));
+      } catch {
+        detail = ' [unserializable]'; // e.g. circular data, which postMessage allows
+      }
+    }
     this._events.update((e) => [`${time} ${event}${detail}`, ...e].slice(0, 50));
   }
 }

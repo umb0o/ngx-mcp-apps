@@ -7,6 +7,7 @@ import {
   isInitializeResult,
   isRefusableResult,
   isToolInputParams,
+  sanitizeHostContext,
 } from './guards';
 import { McpApp } from './mcp-app';
 import { provideMcpApp } from './mcp-app.config';
@@ -53,9 +54,22 @@ describe('guards', () => {
     };
     expect(isInitializeResult(ok)).toBe(true);
     expect(isInitializeResult({ ...ok, hostInfo: { name: 'claude' } })).toBe(false);
-    expect(isInitializeResult({ ...ok, hostCapabilities: { serverTools: true } })).toBe(false);
-    expect(isInitializeResult({ ...ok, hostContext: { theme: 3 } })).toBe(false);
+    // Forward compatible: capabilities and context fields are not a reason to refuse the connection
+    expect(isInitializeResult({ ...ok, hostCapabilities: { serverTools: true } })).toBe(true);
+    expect(isInitializeResult({ ...ok, hostContext: { theme: 3 } })).toBe(true);
+    expect(isInitializeResult({ ...ok, hostContext: 'dark' })).toBe(false);
+    expect(isInitializeResult({ ...ok, hostCapabilities: null })).toBe(false);
     expect(isInitializeResult({ ...ok, protocolVersion: undefined })).toBe(false);
+  });
+
+  it('sanitizeHostContext drops only the invalid known fields', () => {
+    const r = sanitizeHostContext({ theme: 'dark', platform: 'tv', displayMode: 'inline', future: 1 });
+    expect(r?.context).toEqual({ theme: 'dark', displayMode: 'inline', future: 1 });
+    expect(r?.dropped).toEqual(['platform']);
+    expect(sanitizeHostContext('x')).toBeUndefined();
+    const proto = sanitizeHostContext(JSON.parse('{"__proto__": {"polluted": true}, "theme": "light"}'));
+    expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
+    expect(proto?.context.theme).toBe('light');
   });
 
   it('small results', () => {
@@ -115,6 +129,7 @@ describe('McpApp with a misbehaving host', () => {
 
     expect(app.structuredContent()).toEqual({ ok: 1 });
     expect(app.theme()).toBe('dark');
+    expect(app.events().some((e) => e.includes('host-context: invalid fields dropped theme'))).toBe(true);
   });
 
   it('stays standalone if the initialize result is invalid', async () => {

@@ -82,8 +82,26 @@ export function isHostContext(v: unknown): v is McpHostContext {
   );
 }
 
+/** Capabilities are passed through: unknown or future shapes must not break the connection. */
 export function isHostCapabilities(v: unknown): v is McpHostCapabilities {
-  return isObject(v) && Object.values(v).every((c) => c === undefined || isObject(c));
+  return isObject(v);
+}
+
+/**
+ * Keeps the valid fields of a host context and drops the invalid known ones,
+ * so one unexpected value (e.g. a new platform name) does not discard the whole context.
+ */
+export function sanitizeHostContext(v: unknown): { context: McpHostContext; dropped: string[] } | undefined {
+  if (!isObject(v)) return undefined;
+  const context: Record<string, unknown> = { ...v };
+  const dropped: string[] = [];
+  for (const key of Object.keys(context)) {
+    if (!isHostContext({ [key]: context[key] })) {
+      delete context[key];
+      dropped.push(key);
+    }
+  }
+  return { context: context as McpHostContext, dropped };
 }
 
 export function isInitializeResult(v: unknown): v is McpInitializeResult {
@@ -92,7 +110,7 @@ export function isInitializeResult(v: unknown): v is McpInitializeResult {
     isString(v['protocolVersion']) &&
     isImplementation(v['hostInfo']) &&
     isHostCapabilities(v['hostCapabilities']) &&
-    isHostContext(v['hostContext'])
+    isObject(v['hostContext'])
   );
 }
 
