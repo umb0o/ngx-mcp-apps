@@ -47,6 +47,23 @@ export class MyApp {
 
 The connection starts on its own. Outside a host (e.g. `ng serve`) `status()` becomes `standalone` after a timeout.
 
+## Checking your own data
+
+The protocol messages are checked by the library. For the data your server sends, pass a guard:
+any `(value: unknown) => value is T` works (hand-written, typia, valibot...). The type is inferred from it.
+
+```ts
+import { isObject } from 'ngx-mcp-apps';
+
+interface Note { id: number; text: string }
+const isNote = (v: unknown): v is Note => isObject(v) && typeof v['id'] === 'number' && typeof v['text'] === 'string';
+
+note = this.mcp.pollServerTool('read_note', { guard: isNote });   // Signal<Note | undefined>
+opened = this.mcp.structuredContentAs(isNote);                     // Signal<Note | undefined>
+```
+
+Invalid values are dropped (and logged); the signal keeps the last valid one.
+
 ## API
 
 | Signal | Meaning |
@@ -60,7 +77,8 @@ The connection starts on its own. Outside a host (e.g. `ng serve`) `status()` be
 | Method | Meaning |
 | --- | --- |
 | `callServerTool(name, args)` | Call a tool on your MCP server from the UI |
-| `pollServerTool(name, ms)` | Signal that follows a server tool, to see updates the model makes while the app is open |
+| `pollServerTool(name, { intervalMs, args, guard })` | Signal that follows a server tool, to see updates the model makes while the app is open |
+| `structuredContentAs(guard)` | `structuredContent` checked by your guard, typed |
 | `updateModelContext(text)` | Add context for the model's next turn, without a chat message |
 | `sendMessage(text)` | Post a user message; hosts may ask for confirmation or refuse (often on mobile) |
 | `requestDisplayMode(mode)` / `toggleFullscreen()` | Ask the host for another display mode |

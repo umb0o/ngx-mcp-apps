@@ -13,6 +13,18 @@ import { McpCallToolResult, McpDisplayMode, McpHostCapabilities, McpHostContext,
 
 export type McpAppStatus = 'connecting' | 'connected' | 'standalone';
 
+/** Runtime check for your own data: a hand-written type guard, typia, a valibot `is`... */
+export type McpGuard<T> = (value: unknown) => value is T;
+
+export interface PollOptions<T> {
+  /** Interval between calls, in ms. Default: 1000. */
+  intervalMs?: number;
+  /** Arguments for the tool. Default: {}. */
+  args?: Record<string, unknown>;
+  /** Check each `structuredContent`: invalid values are dropped and logged, the signal keeps the last valid one. */
+  guard?: McpGuard<T>;
+}
+
 /**
  * An Angular MCP App, exposed as signals.
  *
@@ -145,7 +157,8 @@ export class McpApp {
    * Useful when the model updates server state (e.g. a "write to app" tool) and the open app must follow.
    * Polling runs while connected and stops when the injection context is destroyed.
    */
-  pollServerTool<T>(name: string, intervalMs = 1000, args: Record<string, unknown> = {}): Signal<T | undefined> {
+  pollServerTool<T = Record<string, unknown>>(name: string, options: PollOptions<T> = {}): Signal<T | undefined> {
+    const { intervalMs = 1000, args = {}, guard } = options;
     const value = signal<T | undefined>(undefined);
     let busy = false;
     const tick = async () => {
@@ -154,7 +167,8 @@ export class McpApp {
       try {
         const r = await this.callServerTool(name, args);
         if (r.isError) this.log(`poll ${name}`, r.content);
-        else value.set(r.structuredContent as T);
+        else if (!guard) value.set(r.structuredContent as T);
+        else if (this.valid(r.structuredContent, guard, `${name} result`)) value.set(r.structuredContent);
       } catch (e) {
         this.log(`poll ${name} failed`, e instanceof Error ? e.message : e);
       } finally {
@@ -165,6 +179,17 @@ export class McpApp {
     void tick();
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
     return value.asReadonly();
+  }
+
+  /**
+   * `structuredContent` of the tool call that opened the app, checked by your guard.
+   * Undefined until a valid result arrives (or if the result does not pass the check).
+   */
+  structuredContentAs<T>(guard: McpGuard<T>): Signal<T | undefined> {
+    return computed(() => {
+      const v = this._toolResult()?.structuredContent;
+      return guard(v) ? v : undefined;
+    });
   }
 
   private connect(bridge: McpBridge): void {
