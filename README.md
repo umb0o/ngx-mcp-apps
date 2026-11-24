@@ -230,10 +230,17 @@ See [CHANGELOG.md](./CHANGELOG.md).
 
 ## Acknowledgements
 
-The protocol behaviour (handshake, messages, auto-resize measurement) is modelled on the official
-[`@modelcontextprotocol/ext-apps`](https://github.com/modelcontextprotocol/ext-apps) (MIT) and the
-[MCP Apps specification (SEP-1865)](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp).
-"MCP", "Claude" and "ChatGPT" are used only to describe compatibility.
+This is an independent, unofficial implementation. It is inspired by, and owes its design to:
+
+- [`@modelcontextprotocol/ext-apps`](https://github.com/modelcontextprotocol/ext-apps) (MIT / Apache-2.0), the official
+  MCP Apps SDK: the handshake, the message flow and the auto-resize measurement are modelled on it, and its `AppBridge`
+  is used in the test suite. No code from it is shipped in this package.
+- [zod](https://zod.dev) (MIT), which the official SDK uses to validate messages: the runtime type guards here follow
+  the same idea, written by hand for the messages a view receives. zod is not a dependency of this package.
+- The [MCP Apps specification (SEP-1865)](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp).
+
+"MCP", "Model Context Protocol", "Claude", "ChatGPT" and "zod" are names of their respective owners and are used only
+to describe compatibility and credit. This project is not affiliated with or endorsed by any of them.
 
 ## License
 
