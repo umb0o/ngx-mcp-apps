@@ -1,5 +1,7 @@
 # ngx-mcp-apps
 
+> Unofficial community library. Not affiliated with or endorsed by Anthropic, OpenAI or the Model Context Protocol project.
+
 Angular runtime for [MCP Apps](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp), exposed as signals.
 Build an Angular UI that an MCP server returns as an interactive app inside Claude, ChatGPT and other MCP hosts.
 
@@ -92,3 +94,14 @@ Invalid values are dropped (and logged); the signal keeps the last valid one.
 - Messages from the host are checked at runtime with small hand-written type guards (exported from `guards`): invalid notifications are dropped and logged, invalid results throw `McpError`.
 - `McpBridge` and `parentWindowPort()` work without Angular, and `provideMcpApp({ port })` accepts a custom transport (useful in tests).
 - Use hash routing (`withHashLocation()`) if you need a router: the iframe URL is not yours.
+
+## Acknowledgements
+
+The protocol behaviour (handshake, messages, auto-resize measurement) is modelled on the official
+[`@modelcontextprotocol/ext-apps`](https://github.com/modelcontextprotocol/ext-apps) (MIT) and the
+[MCP Apps specification (SEP-1865)](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp).
+"MCP", "Claude" and "ChatGPT" are used only to describe compatibility.
+
+## License
+
+MIT © 2026 umb0o

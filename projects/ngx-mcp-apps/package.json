@@ -18,5 +18,6 @@
     "model-context-protocol",
     "claude"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "author": "umb0o"
 }
