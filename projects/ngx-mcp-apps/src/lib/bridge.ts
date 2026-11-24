@@ -16,13 +16,32 @@ export interface McpPort {
   listen(onMessage: (message: unknown) => void): () => void;
 }
 
-/** Port that talks to the host through `window.parent.postMessage`, like the official SDK. */
-export function parentWindowPort(): McpPort {
+export interface ParentWindowPortOptions {
+  /**
+   * Talk only to a parent with one of these origins (e.g. `https://claude.ai`).
+   * Messages from other origins are ignored and nothing is posted to them.
+   * Default: any origin, like the official SDK (hosts usually wrap the app in a sandbox with its own origin).
+   */
+  allowedOrigins?: string[];
+}
+
+/**
+ * Port that talks to the host through `window.parent.postMessage`, like the official SDK.
+ * Incoming messages are accepted only from the parent window.
+ */
+export function parentWindowPort(options: ParentWindowPortOptions = {}): McpPort {
+  const allowed = options.allowedOrigins;
   return {
-    post: (message) => window.parent.postMessage(message, '*'),
+    post: (message) => {
+      if (!allowed) window.parent.postMessage(message, '*');
+      // The browser delivers only to the origin that matches
+      else for (const origin of allowed) window.parent.postMessage(message, origin);
+    },
     listen: (onMessage) => {
       const listener = (event: MessageEvent) => {
-        if (event.source === window.parent) onMessage(event.data);
+        if (event.source !== window.parent) return;
+        if (allowed && !allowed.includes(event.origin)) return;
+        onMessage(event.data);
       };
       window.addEventListener('message', listener);
       return () => window.removeEventListener('message', listener);
@@ -186,8 +205,13 @@ export class McpBridge {
       if (!p) return;
       this.pending.delete(message.id);
       clearTimeout(p.timer);
-      if (message.error) p.reject(new McpError(message.error.code, message.error.message, message.error.data));
-      else p.resolve(message.result);
+      if (message.error !== undefined && message.error !== null) {
+        // The error object comes from outside: do not trust its shape
+        const err = message.error as { code?: unknown; message?: unknown; data?: unknown };
+        const code = typeof err.code === 'number' ? err.code : -32603;
+        const text = typeof err.message === 'string' ? err.message : 'Unknown error from host';
+        p.reject(new McpError(code, text, err.data));
+      } else p.resolve(message.result);
       return;
     }
     if (typeof message.method !== 'string') return;
@@ -212,15 +236,30 @@ export class McpBridge {
   private async answer(id: JsonRpcId, method: string, params: unknown): Promise<void> {
     const handler = this.requestHandlers.get(method);
     if (!handler) {
-      this.port.post({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } });
+      this.reply({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } });
       return;
     }
+    let response: JsonRpcResponse;
     try {
-      const result = await handler(params);
-      this.port.post({ jsonrpc: '2.0', id, result: result ?? {} });
+      response = { jsonrpc: '2.0', id, result: (await handler(params)) ?? {} };
     } catch (e) {
       const error = e instanceof McpError ? e : new McpError(-32603, e instanceof Error ? e.message : String(e));
-      this.port.post({ jsonrpc: '2.0', id, error: { code: error.code, message: error.message, data: error.data } });
+      response = { jsonrpc: '2.0', id, error: { code: error.code, message: error.message, data: error.data } };
+    }
+    if (!this.reply(response)) {
+      // The result could not be sent (e.g. not cloneable): the host must still get an answer
+      this.reply({ jsonrpc: '2.0', id, error: { code: -32603, message: `Could not send the result of ${method}` } });
+    }
+  }
+
+  /** Sends a response; never throws, so a bad handler result cannot become an unhandled rejection. */
+  private reply(response: JsonRpcResponse): boolean {
+    if (this.closed) return true;
+    try {
+      this.port.post(response);
+      return true;
+    } catch {
+      return false;
     }
   }
 }

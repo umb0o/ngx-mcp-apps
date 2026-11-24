@@ -13,11 +13,14 @@ import { McpCallToolResult, McpDisplayMode, McpHostCapabilities, McpHostContext,
 
 export type McpAppStatus = 'connecting' | 'connected' | 'standalone';
 
+const MIN_POLL_INTERVAL = 100;
+const MAX_LOG_DETAIL = 1000;
+
 /** Runtime check for your own data: a hand-written type guard, typia, a valibot `is`... */
 export type McpGuard<T> = (value: unknown) => value is T;
 
 export interface PollOptions<T> {
-  /** Interval between calls, in ms. Default: 1000. */
+  /** Interval between calls, in ms. Default: 1000, minimum: 100. */
   intervalMs?: number;
   /** Arguments for the tool. Default: {}. */
   args?: Record<string, unknown>;
@@ -188,7 +191,9 @@ export class McpApp {
         busy = false;
       }
     };
-    const timer = setInterval(tick, intervalMs);
+    // A zero, negative or NaN interval would flood the host
+    const every = Number.isFinite(intervalMs) ? Math.max(MIN_POLL_INTERVAL, intervalMs) : 1000;
+    const timer = setInterval(tick, every);
     void tick();
     destroyRef.onDestroy(() => clearInterval(timer));
     return value.asReadonly();
@@ -252,7 +257,7 @@ export class McpApp {
 
   private defaultPort(): McpPort | undefined {
     if (typeof window === 'undefined' || window.parent === window) return undefined;
-    return parentWindowPort();
+    return parentWindowPort({ allowedOrigins: this.config.allowedOrigins });
   }
 
   private require(): McpBridge {
@@ -277,6 +282,8 @@ export class McpApp {
         detail = ' [unserializable]'; // e.g. circular data, which postMessage allows
       }
     }
+    // Host data can be large: keep the log small
+    if (detail.length > MAX_LOG_DETAIL) detail = detail.slice(0, MAX_LOG_DETAIL) + '…';
     this._events.update((e) => [`${time} ${event}${detail}`, ...e].slice(0, 50));
   }
 }

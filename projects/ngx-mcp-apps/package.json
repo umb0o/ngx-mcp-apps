@@ -1,8 +1,7 @@
 {
   "name": "ngx-mcp-apps",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "peerDependencies": {
-    "@angular/common": "^22.3.0",
     "@angular/core": "^22.3.0"
   },
   "sideEffects": false,

@@ -12,8 +12,16 @@ export interface McpAppConfig {
   connectTimeout?: number;
   /** Timeout for requests to the host, in ms. Default: 60000. */
   requestTimeout?: number;
-  /** Keep a log of protocol events in `McpApp.events`. Default: false. */
+  /**
+   * Keep a log of protocol events in `McpApp.events`. Default: false.
+   * The log contains data from the host and your server: meant for debugging, not for production UIs.
+   */
   log?: boolean;
+  /**
+   * Talk only to a parent window with one of these origins. Default: any origin, like the official SDK.
+   * Ignored when `port` is set.
+   */
+  allowedOrigins?: string[];
   /** Custom transport. Default: the parent window, when running inside an iframe. */
   port?: McpPort;
 }
