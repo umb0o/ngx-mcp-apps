@@ -71,5 +71,6 @@ The connection starts on its own. Outside a host (e.g. `ng serve`) `status()` be
 ## Notes
 
 - Hosts render the app in a sandboxed iframe from a single HTML resource. Inline your build (JS and CSS in `index.html`) and avoid lazy-loaded routes.
+- Messages from the host are checked at runtime with small hand-written type guards (exported from `guards`): invalid notifications are dropped and logged, invalid results throw `McpError`.
 - `McpBridge` and `parentWindowPort()` work without Angular, and `provideMcpApp({ port })` accepts a custom transport (useful in tests).
 - Use hash routing (`withHashLocation()`) if you need a router: the iframe URL is not yours.

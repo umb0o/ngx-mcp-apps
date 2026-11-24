@@ -1,5 +1,13 @@
 import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
-import { McpBridge, McpPort, parentWindowPort } from './bridge';
+import { McpBridge, McpError, McpPort, parentWindowPort } from './bridge';
+import {
+  isCallToolResult,
+  isDisplayModeResult,
+  isHostContext,
+  isInitializeResult,
+  isRefusableResult,
+  isToolInputParams,
+} from './guards';
 import { MCP_APP_CONFIG } from './mcp-app.config';
 import { McpCallToolResult, McpDisplayMode, McpHostCapabilities, McpHostContext, Methods } from './protocol';
 
@@ -61,22 +69,25 @@ export class McpApp {
     this.bridge = bridge;
 
     // Handlers before connect(), so the first notifications are not lost
-    bridge.onNotification(Methods.toolInput, (p: { arguments?: Record<string, unknown> }) => {
-      this.log('tool-input', p?.arguments);
-      this._toolInput.set(p?.arguments ?? {});
+    bridge.onNotification(Methods.toolInput, (p: unknown) => {
+      if (!this.valid(p, isToolInputParams, 'tool-input')) return;
+      this.log('tool-input', p.arguments);
+      this._toolInput.set(p.arguments ?? {});
     });
-    bridge.onNotification(Methods.toolInputPartial, (p: { arguments?: Record<string, unknown> }) =>
-      this._toolInputPartial.set(p?.arguments),
-    );
-    bridge.onNotification(Methods.toolResult, (p: McpCallToolResult) => {
-      this.log('tool-result', p?.structuredContent);
+    bridge.onNotification(Methods.toolInputPartial, (p: unknown) => {
+      if (this.valid(p, isToolInputParams, 'tool-input-partial')) this._toolInputPartial.set(p.arguments);
+    });
+    bridge.onNotification(Methods.toolResult, (p: unknown) => {
+      if (!this.valid(p, isCallToolResult, 'tool-result')) return;
+      this.log('tool-result', p.structuredContent);
       this._toolResult.set(p);
     });
     bridge.onNotification(Methods.toolCancelled, (p) => {
       this.log('tool-cancelled', p);
       this._toolCancelled.set(true);
     });
-    bridge.onNotification(Methods.hostContextChanged, (p: McpHostContext) => {
+    bridge.onNotification(Methods.hostContextChanged, (p: unknown) => {
+      if (!this.valid(p, isHostContext, 'host-context')) return;
       this.log('host-context', p);
       this._hostContext.update((prev) => ({ ...prev, ...p }));
     });
@@ -85,18 +96,17 @@ export class McpApp {
     this.connect(bridge);
   }
 
-  callServerTool(name: string, args: Record<string, unknown> = {}): Promise<McpCallToolResult> {
-    return this.require().request<McpCallToolResult>(Methods.callTool, { name, arguments: args });
+  async callServerTool(name: string, args: Record<string, unknown> = {}): Promise<McpCallToolResult> {
+    const r = await this.require().request(Methods.callTool, { name, arguments: args });
+    return this.checked(r, isCallToolResult, 'tools/call result');
   }
 
   /** Posts a user message to the conversation. Hosts may ask for confirmation or refuse. */
   async sendMessage(text: string): Promise<boolean> {
-    const r = await this.require().request<{ isError?: boolean }>(Methods.message, {
-      role: 'user',
-      content: [{ type: 'text', text }],
-    });
-    this.log('send-message', r?.isError ? 'refused' : 'ok');
-    return !r?.isError;
+    const raw = await this.require().request(Methods.message, { role: 'user', content: [{ type: 'text', text }] });
+    const r = this.checked(raw, isRefusableResult, 'ui/message result');
+    this.log('send-message', r.isError ? 'refused' : 'ok');
+    return !r.isError;
   }
 
   /** Silently adds context for the model's next turn. */
@@ -109,7 +119,8 @@ export class McpApp {
   }
 
   async requestDisplayMode(mode: McpDisplayMode): Promise<McpDisplayMode> {
-    const r = await this.require().request<{ mode: McpDisplayMode }>(Methods.requestDisplayMode, { mode });
+    const raw = await this.require().request(Methods.requestDisplayMode, { mode });
+    const r = this.checked(raw, isDisplayModeResult, 'ui/request-display-mode result');
     this._hostContext.update((prev) => ({ ...prev, displayMode: r.mode }));
     this.log('display-mode', `${mode} → ${r.mode}`);
     return r.mode;
@@ -120,8 +131,8 @@ export class McpApp {
   }
 
   async openLink(url: string): Promise<boolean> {
-    const r = await this.require().request<{ isError?: boolean }>(Methods.openLink, { url });
-    return !r?.isError;
+    const raw = await this.require().request(Methods.openLink, { url });
+    return !this.checked(raw, isRefusableResult, 'ui/open-link result').isError;
   }
 
   /** Asks the host to close this app. */
@@ -160,8 +171,9 @@ export class McpApp {
     const timeout = setTimeout(() => this.standalone('connect timeout'), this.config.connectTimeout ?? 4000);
     bridge
       .connect()
-      .then((r) => {
+      .then((raw) => {
         clearTimeout(timeout);
+        const r = this.checked(raw, isInitializeResult, 'ui/initialize result');
         this._hostCapabilities.set(r.hostCapabilities);
         this._hostContext.set(r.hostContext);
         this._status.set('connected');
@@ -172,6 +184,20 @@ export class McpApp {
         clearTimeout(timeout);
         this.standalone(e instanceof Error ? e.message : String(e));
       });
+  }
+
+  /** Notifications: an invalid message is dropped and logged. */
+  private valid<T>(v: unknown, guard: (v: unknown) => v is T, what: string): v is T {
+    if (guard(v)) return true;
+    this.log(`invalid ${what} dropped`, v);
+    return false;
+  }
+
+  /** Results: an invalid answer becomes a clear error instead of a crash later on. */
+  private checked<T>(v: unknown, guard: (v: unknown) => v is T, what: string): T {
+    if (guard(v)) return v;
+    this.log(`invalid ${what}`, v);
+    throw new McpError(-32602, `Invalid ${what} from host`, v);
   }
 
   private defaultPort(): McpPort | undefined {
