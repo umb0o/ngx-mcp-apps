@@ -3,14 +3,13 @@
   "version": "0.0.1",
   "peerDependencies": {
     "@angular/common": "^22.3.0",
-    "@angular/core": "^22.3.0",
-    "@modelcontextprotocol/ext-apps": "^2.0.0"
+    "@angular/core": "^22.3.0"
   },
   "sideEffects": false,
   "exports": {
     ".": "./src/public-api.ts"
   },
-  "description": "Angular signals wrapper for MCP Apps: build interactive UIs that run inside Claude, ChatGPT and other MCP hosts.",
+  "description": "Angular signals runtime for MCP Apps, with no dependencies: build interactive UIs that run inside Claude, ChatGPT and other MCP hosts.",
   "keywords": [
     "angular",
     "signals",

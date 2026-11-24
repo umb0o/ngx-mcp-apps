@@ -1,14 +1,16 @@
 # ngx-mcp-apps
 
-Angular wrapper for [MCP Apps](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp), exposed as signals.
+Angular runtime for [MCP Apps](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp), exposed as signals.
 Build an Angular UI that an MCP server returns as an interactive app inside Claude, ChatGPT and other MCP hosts.
 
-It wraps the `App` class from [`@modelcontextprotocol/ext-apps`](https://github.com/modelcontextprotocol/ext-apps).
+**No dependencies.** It implements the view side of the MCP Apps protocol (version `2026-01-26`) itself,
+instead of pulling in the official SDK and zod: about 13 KB unminified, against ~650 KB minified for the official runtime.
+Compatibility is tested against the official host implementation (`AppBridge` from `@modelcontextprotocol/ext-apps`).
 
 ## Install
 
 ```bash
-npm install ngx-mcp-apps @modelcontextprotocol/ext-apps
+npm install ngx-mcp-apps
 ```
 
 ## Setup
@@ -50,8 +52,8 @@ The connection starts on its own. Outside a host (e.g. `ng serve`) `status()` be
 | Signal | Meaning |
 | --- | --- |
 | `status` | `connecting`, `connected` or `standalone` |
-| `toolInput` / `toolResult` / `structuredContent` | Data of the tool call that opened the app |
-| `hostContext` / `hostCapabilities` | What the host says about itself |
+| `toolInput` / `toolInputPartial` / `toolResult` / `structuredContent` / `toolCancelled` | Data of the tool call that opened the app |
+| `hostContext` / `hostCapabilities` / `theme` | What the host says about itself |
 | `displayMode` / `availableDisplayModes` / `canFullscreen` | Inline, fullscreen, picture-in-picture |
 | `events` | Protocol log, newest first, when `log: true` |
 
@@ -63,10 +65,11 @@ The connection starts on its own. Outside a host (e.g. `ng serve`) `status()` be
 | `sendMessage(text)` | Post a user message; hosts may ask for confirmation or refuse (often on mobile) |
 | `requestDisplayMode(mode)` / `toggleFullscreen()` | Ask the host for another display mode |
 | `openLink(url)` | Ask the host to open a link |
-| `app` | The underlying ext-apps `App`, for everything else |
+| `requestTeardown()` | Ask the host to close the app |
+| `bridge` | The underlying `McpBridge`, for protocol methods not wrapped here |
 
 ## Notes
 
 - Hosts render the app in a sandboxed iframe from a single HTML resource. Inline your build (JS and CSS in `index.html`) and avoid lazy-loaded routes.
-- The library imports `@modelcontextprotocol/ext-apps/app-with-deps`, which has no lazy chunks, so the build stays a single file.
+- `McpBridge` and `parentWindowPort()` work without Angular, and `provideMcpApp({ port })` accepts a custom transport (useful in tests).
 - Use hash routing (`withHashLocation()`) if you need a router: the iframe URL is not yours.
