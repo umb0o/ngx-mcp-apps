@@ -72,26 +72,9 @@ The connection starts on its own when `McpApp` is first injected. Outside a host
 
 ## The server side
 
-The library covers the app. The server is any MCP server that declares the HTML as a UI resource and points a tool at it.
-With the official SDK:
-
-```ts
-import { readFile } from 'node:fs/promises';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
-
-const UI = 'ui://my-app/app.html';
-const server = new McpServer({ name: 'my-app', version: '1.0.0' });
-
-registerAppResource(server, 'my-app', UI, {}, async () => ({
-  contents: [{ uri: UI, mimeType: RESOURCE_MIME_TYPE, text: await readFile('dist/app.html', 'utf8') }],
-}));
-
-registerAppTool(server, 'open_app', { description: 'Opens the app', _meta: { ui: { resourceUri: UI } } }, async () => ({
-  content: [{ type: 'text', text: 'App opened.' }],
-  structuredContent: { message: 'Hello from the server' }, // → mcp.structuredContent()
-}));
-```
+This is a front-end library: the server is out of scope and up to you. The app only needs an MCP server that,
+as the MCP Apps specification describes, serves the built HTML as a `ui://` resource and links a tool to it with
+`_meta.ui.resourceUri`. The `structuredContent` of that tool's result is what `mcp.structuredContent()` returns.
 
 Hosts may cache the resource: put a hash of the build in the URI (`ui://my-app/app-<hash>.html`) so a new build is always picked up.
 
