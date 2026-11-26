@@ -76,9 +76,12 @@ export function isHostContext(v: unknown): v is McpHostContext {
     optional(isString)(v['timeZone']) &&
     optional(isString)(v['userAgent']) &&
     optional(oneOf(PLATFORMS))(v['platform']) &&
-    (dims === undefined || (isObject(dims) && Object.values(dims).every((d) => d === undefined || isNumber(d)))) &&
-    (insets === undefined || (isObject(insets) && ['top', 'right', 'bottom', 'left'].every((k) => isNumber(insets[k])))) &&
-    (styles === undefined || (isObject(styles) && optional(recordOf(isString))(styles['variables'])))
+    (dims === undefined ||
+      (isObject(dims) && Object.values(dims).every((d) => d === undefined || isNumber(d)))) &&
+    (insets === undefined ||
+      (isObject(insets) && ['top', 'right', 'bottom', 'left'].every((k) => isNumber(insets[k])))) &&
+    (styles === undefined ||
+      (isObject(styles) && optional(recordOf(isString))(styles['variables'])))
   );
 }
 
@@ -91,7 +94,9 @@ export function isHostCapabilities(v: unknown): v is McpHostCapabilities {
  * Keeps the valid fields of a host context and drops the invalid known ones,
  * so one unexpected value (e.g. a new platform name) does not discard the whole context.
  */
-export function sanitizeHostContext(v: unknown): { context: McpHostContext; dropped: string[] } | undefined {
+export function sanitizeHostContext(
+  v: unknown,
+): { context: McpHostContext; dropped: string[] } | undefined {
   if (!isObject(v)) return undefined;
   const context: Record<string, unknown> = { ...v };
   const dropped: string[] = [];

@@ -8,13 +8,17 @@ import { provideMcpApp } from './mcp-app.config';
 import { fakeHost, handshake, host, hostWith, manualPort, until } from './test-helpers';
 
 function app(port: McpPort) {
-  TestBed.configureTestingModule({ providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })] });
+  TestBed.configureTestingModule({
+    providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })],
+  });
   return TestBed.inject(McpApp);
 }
 
 describe('McpApp without a host', () => {
   it('goes standalone outside a host iframe', () => {
-    TestBed.configureTestingModule({ providers: [provideMcpApp({ name: 'test', version: '1.0.0', log: true })] });
+    TestBed.configureTestingModule({
+      providers: [provideMcpApp({ name: 'test', version: '1.0.0', log: true })],
+    });
     const mcp = TestBed.inject(McpApp);
     expect(mcp.status()).toBe('standalone');
     expect(mcp.connected()).toBe(false);
@@ -33,7 +37,9 @@ describe('McpApp without a host', () => {
 describe('McpApp connection', () => {
   it('stays standalone if the initialize result is invalid', async () => {
     const { port } = fakeHost({ protocolVersion: '2026-01-26', hostInfo: 'claude' });
-    TestBed.configureTestingModule({ providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })] });
+    TestBed.configureTestingModule({
+      providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })],
+    });
     const app = TestBed.inject(McpApp);
     await until(() => app.status() === 'standalone');
     expect(app.events().some((e) => e.includes('Invalid ui/initialize result'))).toBe(true);
@@ -52,7 +58,9 @@ describe('McpApp connection', () => {
     const { port } = host({}, '2099-01-01');
     const a = app(port);
     await until(() => a.connected());
-    expect(a.events().some((e) => e.includes('protocol version app 2026-01-26, host 2099-01-01'))).toBe(true);
+    expect(
+      a.events().some((e) => e.includes('protocol version app 2026-01-26, host 2099-01-01')),
+    ).toBe(true);
   });
 
   it('refuses to call the host before the connection is ready', async () => {
@@ -71,19 +79,35 @@ describe('McpApp host notifications', () => {
       hostCapabilities: {},
       hostContext: { theme: 'dark' },
     });
-    TestBed.configureTestingModule({ providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })] });
+    TestBed.configureTestingModule({
+      providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })],
+    });
     const app = TestBed.inject(McpApp);
     await until(() => app.connected());
 
-    send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { content: [], structuredContent: { ok: 1 } } });
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/tool-result',
+      params: { content: [], structuredContent: { ok: 1 } },
+    });
     await until(() => app.structuredContent() !== undefined);
-    send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { structuredContent: 'broken' } });
-    send({ jsonrpc: '2.0', method: 'ui/notifications/host-context-changed', params: { theme: 'purple' } });
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/tool-result',
+      params: { structuredContent: 'broken' },
+    });
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/host-context-changed',
+      params: { theme: 'purple' },
+    });
     await until(() => app.events().filter((e) => e.includes('dropped')).length === 2);
 
     expect(app.structuredContent()).toEqual({ ok: 1 });
     expect(app.theme()).toBe('dark');
-    expect(app.events().some((e) => e.includes('host-context: invalid fields dropped theme'))).toBe(true);
+    expect(app.events().some((e) => e.includes('host-context: invalid fields dropped theme'))).toBe(
+      true,
+    );
   });
 
   it('resets toolCancelled when a new tool call arrives', async () => {
@@ -102,7 +126,11 @@ describe('McpApp event log', () => {
     const { port, send } = manualPort(handshake);
     const a = app(port);
     await until(() => a.connected());
-    send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { content: [], structuredContent: { big: 'x'.repeat(50_000) } } });
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/tool-result',
+      params: { content: [], structuredContent: { big: 'x'.repeat(50_000) } },
+    });
     await until(() => a.structuredContent() !== undefined);
     expect(Math.max(...a.events().map((e) => e.length))).toBeLessThan(1100);
   });
@@ -111,7 +139,8 @@ describe('McpApp event log', () => {
     const { port, send } = manualPort(handshake);
     const a = app(port);
     await until(() => a.connected());
-    for (let i = 0; i < 80; i++) send({ jsonrpc: '2.0', method: 'ui/notifications/tool-input', params: { arguments: { i } } });
+    for (let i = 0; i < 80; i++)
+      send({ jsonrpc: '2.0', method: 'ui/notifications/tool-input', params: { arguments: { i } } });
     await until(() => (a.toolInput() as { i?: number } | undefined)?.i === 79);
     expect(a.events().length).toBe(50);
   });
@@ -122,7 +151,11 @@ describe('McpApp event log', () => {
     await until(() => a.connected());
     const circular: Record<string, unknown> = { content: [] };
     circular['_meta'] = circular;
-    send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { content: [], structuredContent: circular } });
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/tool-result',
+      params: { content: [], structuredContent: circular },
+    });
     await until(() => a.structuredContent() !== undefined);
     expect(a.events().some((e) => e.includes('[unserializable]'))).toBe(true);
   });
@@ -133,10 +166,13 @@ describe('McpApp typed tool data (pollServerTool, structuredContentAs)', () => {
     id: number;
     text: string;
   }
-  const isNote = (v: unknown): v is Note => isObject(v) && typeof v['id'] === 'number' && typeof v['text'] === 'string';
+  const isNote = (v: unknown): v is Note =>
+    isObject(v) && typeof v['id'] === 'number' && typeof v['text'] === 'string';
 
   function setup(port: McpPort) {
-    TestBed.configureTestingModule({ providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })] });
+    TestBed.configureTestingModule({
+      providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })],
+    });
     return TestBed.inject(McpApp);
   }
 
@@ -161,10 +197,15 @@ describe('McpApp typed tool data (pollServerTool, structuredContentAs)', () => {
   });
 
   it('pollServerTool keeps only values that pass the guard', async () => {
-    const { port } = hostWith([{ id: 1, text: 'first' }, { id: 'two', text: 2 }]);
+    const { port } = hostWith([
+      { id: 1, text: 'first' },
+      { id: 'two', text: 2 },
+    ]);
     const app = setup(port);
     await until(() => app.connected());
-    const note = TestBed.runInInjectionContext(() => app.pollServerTool('read_note', { intervalMs: 10, guard: isNote }));
+    const note = TestBed.runInInjectionContext(() =>
+      app.pollServerTool('read_note', { intervalMs: 10, guard: isNote }),
+    );
     await until(() => note()?.id === 1);
     await until(() => app.events().some((e) => e.includes('read_note result dropped')));
     expect(note()).toEqual({ id: 1, text: 'first' });
@@ -174,7 +215,9 @@ describe('McpApp typed tool data (pollServerTool, structuredContentAs)', () => {
     const { port } = hostWith([{ anything: true }]);
     const app = setup(port);
     await until(() => app.connected());
-    const data = TestBed.runInInjectionContext(() => app.pollServerTool('read', { intervalMs: 10 }));
+    const data = TestBed.runInInjectionContext(() =>
+      app.pollServerTool('read', { intervalMs: 10 }),
+    );
     await until(() => data() !== undefined);
     expect(data()).toEqual({ anything: true });
   });
@@ -185,11 +228,19 @@ describe('McpApp typed tool data (pollServerTool, structuredContentAs)', () => {
     await until(() => app.connected());
     const note = app.structuredContentAs(isNote);
 
-    send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { content: [], structuredContent: { id: 'x' } } });
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/tool-result',
+      params: { content: [], structuredContent: { id: 'x' } },
+    });
     await until(() => app.structuredContent() !== undefined);
     expect(note()).toBeUndefined();
 
-    send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { content: [], structuredContent: { id: 7, text: 'ok' } } });
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/tool-result',
+      params: { content: [], structuredContent: { id: 7, text: 'ok' } },
+    });
     await until(() => note() !== undefined);
     expect(note()).toEqual({ id: 7, text: 'ok' });
   });
@@ -233,9 +284,20 @@ describe('McpApp with the official MCP Apps host (AppBridge)', () => {
       null,
       { name: 'test-host', version: '1.0.0' },
       { serverTools: {}, openLinks: {}, updateModelContext: { text: {} }, message: { text: {} } },
-      { hostContext: { theme: 'dark', displayMode: 'inline', availableDisplayModes: ['inline', 'fullscreen'] } },
+      {
+        hostContext: {
+          theme: 'dark',
+          displayMode: 'inline',
+          availableDisplayModes: ['inline', 'fullscreen'],
+        },
+      },
     );
-    const seen = { initialized: false, sizes: [] as unknown[], context: [] as unknown[], messages: [] as unknown[] };
+    const seen = {
+      initialized: false,
+      sizes: [] as unknown[],
+      context: [] as unknown[],
+      messages: [] as unknown[],
+    };
     host.oninitialized = () => (seen.initialized = true);
     host.onsizechange = (p) => seen.sizes.push(p);
     host.oncalltool = async (p) => ({
@@ -254,7 +316,9 @@ describe('McpApp with the official MCP Apps host (AppBridge)', () => {
     await host.connect(hostTransport as never);
 
     TestBed.configureTestingModule({
-      providers: [provideMcpApp({ name: 'compat-app', version: '1.0.0', port, autoResize: false, log: true })],
+      providers: [
+        provideMcpApp({ name: 'compat-app', version: '1.0.0', port, autoResize: false, log: true }),
+      ],
     });
     const app = TestBed.inject(McpApp);
     await until(() => app.connected());
@@ -274,7 +338,10 @@ describe('McpApp with the official MCP Apps host (AppBridge)', () => {
   it('receives tool input and tool result', async () => {
     const { host, app } = await setup();
     await host.sendToolInput({ arguments: { topic: 'loops' } });
-    await host.sendToolResult({ content: [{ type: 'text', text: 'hi' }], structuredContent: { message: 'Ciao' } });
+    await host.sendToolResult({
+      content: [{ type: 'text', text: 'hi' }],
+      structuredContent: { message: 'Ciao' },
+    });
     await until(() => app.structuredContent() !== undefined);
     expect(app.toolInput()).toEqual({ topic: 'loops' });
     expect(app.structuredContent()).toEqual({ message: 'Ciao' });

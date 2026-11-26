@@ -12,7 +12,9 @@ export const until = async (check: () => boolean, ms = 3000) => {
 };
 
 /** A port whose incoming side is driven by the test. */
-export function manualPort(onPost: (m: JsonRpcMessage, send: (m: unknown) => void) => void = () => {}) {
+export function manualPort(
+  onPost: (m: JsonRpcMessage, send: (m: unknown) => void) => void = () => {},
+) {
   const listeners = new Set<(m: unknown) => void>();
   const send = (m: unknown) => queueMicrotask(() => listeners.forEach((cb) => cb(m)));
   const posted: JsonRpcMessage[] = [];
@@ -35,7 +37,12 @@ export const handshake = (m: JsonRpcMessage, send: (m: unknown) => void) => {
     send({
       jsonrpc: '2.0',
       id: m.id,
-      result: { protocolVersion: '2026-01-26', hostInfo: { name: 'h', version: '1' }, hostCapabilities: {}, hostContext: {} },
+      result: {
+        protocolVersion: '2026-01-26',
+        hostInfo: { name: 'h', version: '1' },
+        hostCapabilities: {},
+        hostContext: {},
+      },
     });
   }
 };
@@ -65,7 +72,16 @@ export function host(hostContext: Record<string, unknown> = {}, protocolVersion 
   const port: McpPort = {
     post: (m) => {
       if ('id' in m && 'method' in m && m.method === 'ui/initialize') {
-        send({ jsonrpc: '2.0', id: m.id, result: { protocolVersion, hostInfo: { name: 'h', version: '1' }, hostCapabilities: {}, hostContext } });
+        send({
+          jsonrpc: '2.0',
+          id: m.id,
+          result: {
+            protocolVersion,
+            hostInfo: { name: 'h', version: '1' },
+            hostCapabilities: {},
+            hostContext,
+          },
+        });
       }
     },
     listen: (cb) => {
@@ -88,7 +104,12 @@ export function hostWith(replies: unknown[]) {
         send({
           jsonrpc: '2.0',
           id: m.id,
-          result: { protocolVersion: '2026-01-26', hostInfo: { name: 'h', version: '1' }, hostCapabilities: {}, hostContext: {} },
+          result: {
+            protocolVersion: '2026-01-26',
+            hostInfo: { name: 'h', version: '1' },
+            hostCapabilities: {},
+            hostContext: {},
+          },
         });
       } else if (m.method === 'tools/call') {
         const structuredContent = replies[Math.min(i++, replies.length - 1)];

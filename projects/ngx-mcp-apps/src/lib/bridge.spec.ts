@@ -5,7 +5,9 @@ import { host, manualPort, until } from './test-helpers';
 describe('parentWindowPort', () => {
   // In the test environment window.parent === window, so the window stands in for the host
   const dispatch = (data: unknown, origin: string, source: unknown = window) =>
-    window.dispatchEvent(new MessageEvent('message', { data, origin, source: source as MessageEventSource }));
+    window.dispatchEvent(
+      new MessageEvent('message', { data, origin, source: source as MessageEventSource }),
+    );
 
   it('ignores messages that do not come from the parent window', () => {
     const received: unknown[] = [];
@@ -45,7 +47,16 @@ describe('McpBridge incoming messages', () => {
     const bridge = new McpBridge(port, { name: 't', version: '1' });
     let called = 0;
     bridge.onNotification('n', () => called++);
-    for (const junk of [null, 'text', 42, [], { method: 'n' }, { jsonrpc: '1.0', method: 'n' }, { jsonrpc: '2.0' }, { jsonrpc: '2.0', method: 7 }]) {
+    for (const junk of [
+      null,
+      'text',
+      42,
+      [],
+      { method: 'n' },
+      { jsonrpc: '1.0', method: 'n' },
+      { jsonrpc: '2.0' },
+      { jsonrpc: '2.0', method: 7 },
+    ]) {
       send(junk);
     }
     send({ jsonrpc: '2.0', method: 'n' });
@@ -67,7 +78,11 @@ describe('McpBridge incoming messages', () => {
     new McpBridge(port, { name: 't', version: '1' });
     send({ jsonrpc: '2.0', id: 'a1', method: 'secret/dump' });
     await until(() => posted.length === 1);
-    expect(posted[0]).toEqual({ jsonrpc: '2.0', id: 'a1', error: { code: -32601, message: 'Method not found: secret/dump' } });
+    expect(posted[0]).toEqual({
+      jsonrpc: '2.0',
+      id: 'a1',
+      error: { code: -32601, message: 'Method not found: secret/dump' },
+    });
   });
 
   it('still answers the host when a handler result cannot be sent', async () => {
@@ -87,13 +102,21 @@ describe('McpBridge incoming messages', () => {
     bridge.onRequest('custom', () => ({ fn: () => {} }));
     listeners.forEach((cb) => cb({ jsonrpc: '2.0', id: 5, method: 'custom' }));
     await until(() => answers.length === 1);
-    expect(answers[0]).toEqual({ jsonrpc: '2.0', id: 5, error: { code: -32603, message: 'Could not send the result of custom' } });
+    expect(answers[0]).toEqual({
+      jsonrpc: '2.0',
+      id: 5,
+      error: { code: -32603, message: 'Could not send the result of custom' },
+    });
   });
 
   it('reports a throwing notification handler instead of crashing the listener', async () => {
     const { port, send } = host();
     const errors: string[] = [];
-    const bridge = new McpBridge(port, { name: 't', version: '1' }, { onError: (_e, m) => errors.push(m) });
+    const bridge = new McpBridge(
+      port,
+      { name: 't', version: '1' },
+      { onError: (_e, m) => errors.push(m) },
+    );
     bridge.onNotification('boom', () => {
       throw new Error('bad');
     });
@@ -106,7 +129,8 @@ describe('McpBridge incoming messages', () => {
 describe('McpBridge requests', () => {
   it('turns a malformed error object into a clean McpError', async () => {
     const { port } = manualPort((m, send) => {
-      if ('id' in m) send({ jsonrpc: '2.0', id: m.id, error: { code: 'nope', message: { html: '<b>' } } });
+      if ('id' in m)
+        send({ jsonrpc: '2.0', id: m.id, error: { code: 'nope', message: { html: '<b>' } } });
     });
     const bridge = new McpBridge(port, { name: 't', version: '1' });
     const error = (await bridge.request('x').catch((e: unknown) => e)) as McpError;

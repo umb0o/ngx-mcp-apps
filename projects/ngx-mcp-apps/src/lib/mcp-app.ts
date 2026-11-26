@@ -9,7 +9,14 @@ import {
   sanitizeHostContext,
 } from './guards';
 import { MCP_APP_CONFIG } from './mcp-app.config';
-import { McpCallToolResult, McpDisplayMode, McpHostCapabilities, McpHostContext, Methods, PROTOCOL_VERSION } from './protocol';
+import {
+  McpCallToolResult,
+  McpDisplayMode,
+  McpHostCapabilities,
+  McpHostContext,
+  Methods,
+  PROTOCOL_VERSION,
+} from './protocol';
 
 export type McpAppStatus = 'connecting' | 'connected' | 'standalone';
 
@@ -65,8 +72,12 @@ export class McpApp {
   readonly hostContext = this._hostContext.asReadonly();
   readonly hostCapabilities = this._hostCapabilities.asReadonly();
   readonly theme = computed(() => this._hostContext()?.theme);
-  readonly displayMode = computed<McpDisplayMode>(() => this._hostContext()?.displayMode ?? 'inline');
-  readonly availableDisplayModes = computed<McpDisplayMode[]>(() => this._hostContext()?.availableDisplayModes ?? []);
+  readonly displayMode = computed<McpDisplayMode>(
+    () => this._hostContext()?.displayMode ?? 'inline',
+  );
+  readonly availableDisplayModes = computed<McpDisplayMode[]>(
+    () => this._hostContext()?.availableDisplayModes ?? [],
+  );
   readonly canFullscreen = computed(() => this.availableDisplayModes().includes('fullscreen'));
   /** Protocol event log, newest first (only when `log: true`). */
   readonly events = this._events.asReadonly();
@@ -80,10 +91,15 @@ export class McpApp {
       this.standalone('not inside a host iframe');
       return;
     }
-    const bridge = new McpBridge(port, { name: this.config.name, version: this.config.version }, {
-      timeout: this.config.requestTimeout,
-      onError: (e, method) => this.log(`${method} handler failed`, e instanceof Error ? e.message : e),
-    });
+    const bridge = new McpBridge(
+      port,
+      { name: this.config.name, version: this.config.version },
+      {
+        timeout: this.config.requestTimeout,
+        onError: (e, method) =>
+          this.log(`${method} handler failed`, e instanceof Error ? e.message : e),
+      },
+    );
     this.bridge = bridge;
 
     // Handlers before connect(), so the first notifications are not lost
@@ -94,7 +110,8 @@ export class McpApp {
       this._toolInput.set(p.arguments ?? {});
     });
     bridge.onNotification(Methods.toolInputPartial, (p: unknown) => {
-      if (this.valid(p, isToolInputParams, 'tool-input-partial')) this._toolInputPartial.set(p.arguments);
+      if (this.valid(p, isToolInputParams, 'tool-input-partial'))
+        this._toolInputPartial.set(p.arguments);
     });
     bridge.onNotification(Methods.toolResult, (p: unknown) => {
       if (!this.valid(p, isCallToolResult, 'tool-result')) return;
@@ -117,21 +134,30 @@ export class McpApp {
     this.connect(bridge);
   }
 
-  async callServerTool(name: string, args: Record<string, unknown> = {}): Promise<McpCallToolResult> {
+  async callServerTool(
+    name: string,
+    args: Record<string, unknown> = {},
+  ): Promise<McpCallToolResult> {
     const r = await this.require().request(Methods.callTool, { name, arguments: args });
     return this.checked(r, isCallToolResult, 'tools/call result');
   }
 
   /** Posts a user message to the conversation. Hosts may ask for confirmation or refuse. */
   async sendMessage(text: string): Promise<boolean> {
-    const raw = await this.require().request(Methods.message, { role: 'user', content: [{ type: 'text', text }] });
+    const raw = await this.require().request(Methods.message, {
+      role: 'user',
+      content: [{ type: 'text', text }],
+    });
     const r = this.checked(raw, isRefusableResult, 'ui/message result');
     this.log('send-message', r.isError ? 'refused' : 'ok');
     return !r.isError;
   }
 
   /** Silently adds context for the model's next turn. */
-  async updateModelContext(text: string, structuredContent?: Record<string, unknown>): Promise<void> {
+  async updateModelContext(
+    text: string,
+    structuredContent?: Record<string, unknown>,
+  ): Promise<void> {
     await this.require().request(Methods.updateModelContext, {
       content: [{ type: 'text', text }],
       ...(structuredContent ? { structuredContent } : {}),
@@ -166,14 +192,19 @@ export class McpApp {
    * Useful when the model updates server state (e.g. a "write to app" tool) and the open app must follow.
    * Polling runs while connected and stops when the injection context is destroyed.
    */
-  pollServerTool<T = Record<string, unknown>>(name: string, options: PollOptions<T> = {}): Signal<T | undefined> {
+  pollServerTool<T = Record<string, unknown>>(
+    name: string,
+    options: PollOptions<T> = {},
+  ): Signal<T | undefined> {
     const { intervalMs = 1000, args = {}, guard, injector } = options;
     // Resolve the owner first, so a misplaced call fails with a clear message instead of NG0203
     let destroyRef: DestroyRef;
     try {
       destroyRef = injector ? injector.get(DestroyRef) : inject(DestroyRef);
     } catch {
-      throw new Error('pollServerTool() must be called in an injection context (e.g. a field initializer), or given { injector }.');
+      throw new Error(
+        'pollServerTool() must be called in an injection context (e.g. a field initializer), or given { injector }.',
+      );
     }
     const value = signal<T | undefined>(undefined);
     let busy = false;
@@ -184,7 +215,8 @@ export class McpApp {
         const r = await this.callServerTool(name, args);
         if (r.isError) this.log(`poll ${name}`, r.content);
         else if (!guard) value.set(r.structuredContent as T);
-        else if (this.valid(r.structuredContent, guard, `${name} result`)) value.set(r.structuredContent);
+        else if (this.valid(r.structuredContent, guard, `${name} result`))
+          value.set(r.structuredContent);
       } catch (e) {
         this.log(`poll ${name} failed`, e instanceof Error ? e.message : e);
       } finally {
@@ -211,18 +243,23 @@ export class McpApp {
   }
 
   private connect(bridge: McpBridge): void {
-    const timeout = setTimeout(() => this.standalone('connect timeout'), this.config.connectTimeout ?? 4000);
+    const timeout = setTimeout(
+      () => this.standalone('connect timeout'),
+      this.config.connectTimeout ?? 4000,
+    );
     bridge
       .connect()
       .then((raw) => {
         clearTimeout(timeout);
         const r = this.checked(raw, isInitializeResult, 'ui/initialize result');
-        if (r.protocolVersion !== PROTOCOL_VERSION) this.log('protocol version', `app ${PROTOCOL_VERSION}, host ${r.protocolVersion}`);
+        if (r.protocolVersion !== PROTOCOL_VERSION)
+          this.log('protocol version', `app ${PROTOCOL_VERSION}, host ${r.protocolVersion}`);
         this._hostCapabilities.set(r.hostCapabilities);
         this._hostContext.set(this.sanitizedContext(r.hostContext, 'host context') ?? {});
         this._status.set('connected');
         this.log('connected', { host: r.hostInfo, capabilities: r.hostCapabilities });
-        if ((this.config.autoResize ?? true) && typeof ResizeObserver !== 'undefined') bridge.startAutoResize();
+        if ((this.config.autoResize ?? true) && typeof ResizeObserver !== 'undefined')
+          bridge.startAutoResize();
       })
       .catch((e) => {
         clearTimeout(timeout);

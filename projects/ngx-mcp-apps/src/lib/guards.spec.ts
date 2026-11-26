@@ -10,7 +10,9 @@ import {
 
 describe('type guards for host data', () => {
   it('isCallToolResult', () => {
-    expect(isCallToolResult({ content: [{ type: 'text', text: 'hi' }], structuredContent: { a: 1 } })).toBe(true);
+    expect(
+      isCallToolResult({ content: [{ type: 'text', text: 'hi' }], structuredContent: { a: 1 } }),
+    ).toBe(true);
     expect(isCallToolResult({ content: [], isError: true })).toBe(true);
     expect(isCallToolResult({ structuredContent: {} })).toBe(false);
     expect(isCallToolResult({ content: [{ text: 'no type' }] })).toBe(false);
@@ -59,11 +61,18 @@ describe('type guards for host data', () => {
   });
 
   it('sanitizeHostContext drops only the invalid known fields', () => {
-    const r = sanitizeHostContext({ theme: 'dark', platform: 'tv', displayMode: 'inline', future: 1 });
+    const r = sanitizeHostContext({
+      theme: 'dark',
+      platform: 'tv',
+      displayMode: 'inline',
+      future: 1,
+    });
     expect(r?.context).toEqual({ theme: 'dark', displayMode: 'inline', future: 1 });
     expect(r?.dropped).toEqual(['platform']);
     expect(sanitizeHostContext('x')).toBeUndefined();
-    const proto = sanitizeHostContext(JSON.parse('{"__proto__": {"polluted": true}, "theme": "light"}'));
+    const proto = sanitizeHostContext(
+      JSON.parse('{"__proto__": {"polluted": true}, "theme": "light"}'),
+    );
     expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
     expect(proto?.context.theme).toBe('light');
   });

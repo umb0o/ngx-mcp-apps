@@ -128,7 +128,12 @@ export class McpBridge {
         // e.g. DataCloneError: fail now instead of waiting for the timeout
         clearTimeout(timer);
         this.pending.delete(id);
-        reject(new McpError(-32603, `Could not send ${method}: ${e instanceof Error ? e.message : String(e)}`));
+        reject(
+          new McpError(
+            -32603,
+            `Could not send ${method}: ${e instanceof Error ? e.message : String(e)}`,
+          ),
+        );
       }
     });
   }
@@ -228,7 +233,9 @@ export class McpBridge {
     try {
       handler(message.params);
     } catch (e) {
-      const report = this.options.onError ?? ((err: unknown, m: string) => console.error(`[ngx-mcp-apps] ${m} handler failed`, err));
+      const report =
+        this.options.onError ??
+        ((err: unknown, m: string) => console.error(`[ngx-mcp-apps] ${m} handler failed`, err));
       report(e, message.method);
     }
   }
@@ -236,19 +243,34 @@ export class McpBridge {
   private async answer(id: JsonRpcId, method: string, params: unknown): Promise<void> {
     const handler = this.requestHandlers.get(method);
     if (!handler) {
-      this.reply({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } });
+      this.reply({
+        jsonrpc: '2.0',
+        id,
+        error: { code: -32601, message: `Method not found: ${method}` },
+      });
       return;
     }
     let response: JsonRpcResponse;
     try {
       response = { jsonrpc: '2.0', id, result: (await handler(params)) ?? {} };
     } catch (e) {
-      const error = e instanceof McpError ? e : new McpError(-32603, e instanceof Error ? e.message : String(e));
-      response = { jsonrpc: '2.0', id, error: { code: error.code, message: error.message, data: error.data } };
+      const error =
+        e instanceof McpError
+          ? e
+          : new McpError(-32603, e instanceof Error ? e.message : String(e));
+      response = {
+        jsonrpc: '2.0',
+        id,
+        error: { code: error.code, message: error.message, data: error.data },
+      };
     }
     if (!this.reply(response)) {
       // The result could not be sent (e.g. not cloneable): the host must still get an answer
-      this.reply({ jsonrpc: '2.0', id, error: { code: -32603, message: `Could not send the result of ${method}` } });
+      this.reply({
+        jsonrpc: '2.0',
+        id,
+        error: { code: -32603, message: `Could not send the result of ${method}` },
+      });
     }
   }
 

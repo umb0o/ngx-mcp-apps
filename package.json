@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "node scripts/build.mjs",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test ngx-mcp-apps --watch=false"
+    "test": "ng test ngx-mcp-apps --watch=false",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "private": true,
   "packageManager": "npm@12.0.2",
