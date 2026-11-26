@@ -1,46 +1,6 @@
-/** Security and robustness tests added for 0.1.0. */
-import { Injector } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
 import { McpBridge, McpError, McpPort, parentWindowPort } from './bridge';
-import { McpApp } from './mcp-app';
-import { provideMcpApp } from './mcp-app.config';
 import { JsonRpcMessage } from './protocol';
-
-const until = async (check: () => boolean, ms = 2000) => {
-  const start = Date.now();
-  while (!check()) {
-    if (Date.now() - start > ms) throw new Error('condition not met in time');
-    await new Promise((r) => setTimeout(r, 5));
-  }
-};
-
-/** A port whose incoming side is driven by the test. */
-function manualPort(onPost: (m: JsonRpcMessage, send: (m: unknown) => void) => void = () => {}) {
-  const listeners = new Set<(m: unknown) => void>();
-  const send = (m: unknown) => queueMicrotask(() => listeners.forEach((cb) => cb(m)));
-  const posted: JsonRpcMessage[] = [];
-  const port: McpPort = {
-    post: (m) => {
-      posted.push(m);
-      onPost(m, send);
-    },
-    listen: (cb) => {
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-  };
-  return { port, send, posted };
-}
-
-const handshake = (m: JsonRpcMessage, send: (m: unknown) => void) => {
-  if ('id' in m && 'method' in m && m.method === 'ui/initialize') {
-    send({
-      jsonrpc: '2.0',
-      id: m.id,
-      result: { protocolVersion: '2026-01-26', hostInfo: { name: 'h', version: '1' }, hostCapabilities: {}, hostContext: {} },
-    });
-  }
-};
+import { host, manualPort, until } from './test-helpers';
 
 describe('parentWindowPort', () => {
   // In the test environment window.parent === window, so the window stands in for the host
@@ -79,7 +39,7 @@ describe('parentWindowPort', () => {
   });
 });
 
-describe('McpBridge hardening', () => {
+describe('McpBridge incoming messages', () => {
   it('ignores anything that is not JSON-RPC 2.0', async () => {
     const { port, send, posted } = manualPort();
     const bridge = new McpBridge(port, { name: 't', version: '1' });
@@ -92,17 +52,6 @@ describe('McpBridge hardening', () => {
     await until(() => called === 1);
     expect(called).toBe(1);
     expect(posted).toEqual([]);
-  });
-
-  it('turns a malformed error object into a clean McpError', async () => {
-    const { port } = manualPort((m, send) => {
-      if ('id' in m) send({ jsonrpc: '2.0', id: m.id, error: { code: 'nope', message: { html: '<b>' } } });
-    });
-    const bridge = new McpBridge(port, { name: 't', version: '1' });
-    const error = (await bridge.request('x').catch((e: unknown) => e)) as McpError;
-    expect(error).toBeInstanceOf(McpError);
-    expect(error.code).toBe(-32603);
-    expect(error.message).toBe('Unknown error from host');
   });
 
   it('ignores responses with an unknown id', async () => {
@@ -140,49 +89,49 @@ describe('McpBridge hardening', () => {
     await until(() => answers.length === 1);
     expect(answers[0]).toEqual({ jsonrpc: '2.0', id: 5, error: { code: -32603, message: 'Could not send the result of custom' } });
   });
+
+  it('reports a throwing notification handler instead of crashing the listener', async () => {
+    const { port, send } = host();
+    const errors: string[] = [];
+    const bridge = new McpBridge(port, { name: 't', version: '1' }, { onError: (_e, m) => errors.push(m) });
+    bridge.onNotification('boom', () => {
+      throw new Error('bad');
+    });
+    send({ jsonrpc: '2.0', method: 'boom' });
+    await until(() => errors.length === 1);
+    expect(errors).toEqual(['boom']);
+  });
 });
 
-describe('McpApp hardening', () => {
-  function app(port: McpPort) {
-    TestBed.configureTestingModule({ providers: [provideMcpApp({ name: 't', version: '1', port, autoResize: false, log: true })] });
-    return TestBed.inject(McpApp);
-  }
-
-  it('keeps log entries short even when the host sends a lot of data', async () => {
-    const { port, send } = manualPort(handshake);
-    const a = app(port);
-    await until(() => a.connected());
-    send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { content: [], structuredContent: { big: 'x'.repeat(50_000) } } });
-    await until(() => a.structuredContent() !== undefined);
-    expect(Math.max(...a.events().map((e) => e.length))).toBeLessThan(1100);
+describe('McpBridge requests', () => {
+  it('turns a malformed error object into a clean McpError', async () => {
+    const { port } = manualPort((m, send) => {
+      if ('id' in m) send({ jsonrpc: '2.0', id: m.id, error: { code: 'nope', message: { html: '<b>' } } });
+    });
+    const bridge = new McpBridge(port, { name: 't', version: '1' });
+    const error = (await bridge.request('x').catch((e: unknown) => e)) as McpError;
+    expect(error).toBeInstanceOf(McpError);
+    expect(error.code).toBe(-32603);
+    expect(error.message).toBe('Unknown error from host');
   });
 
-  it('never keeps more than 50 log entries', async () => {
-    const { port, send } = manualPort(handshake);
-    const a = app(port);
-    await until(() => a.connected());
-    for (let i = 0; i < 80; i++) send({ jsonrpc: '2.0', method: 'ui/notifications/tool-input', params: { arguments: { i } } });
-    await until(() => (a.toolInput() as { i?: number } | undefined)?.i === 79);
-    expect(a.events().length).toBe(50);
+  it('fails a request at once when the message cannot be sent', async () => {
+    const port: McpPort = {
+      post: () => {
+        throw new Error('DataCloneError');
+      },
+      listen: () => () => {},
+    };
+    const bridge = new McpBridge(port, { name: 't', version: '1' }, { timeout: 60000 });
+    const started = Date.now();
+    await expect(bridge.request('x')).rejects.toThrow('Could not send x: DataCloneError');
+    expect(Date.now() - started).toBeLessThan(1000);
   });
 
-  it('refuses to call the host before the connection is ready', async () => {
-    const { port } = manualPort();
-    const a = app(port);
-    await expect(a.callServerTool('x')).rejects.toThrow('not connected');
-    await expect(a.sendMessage('x')).rejects.toThrow('not connected');
-  });
-
-  it('clamps the polling interval so a bad value cannot flood the host', async () => {
-    const { port } = manualPort(handshake);
-    const a = app(port);
-    await until(() => a.connected());
-    const spy = vi.spyOn(globalThis, 'setInterval');
-    const injector = TestBed.inject(Injector);
-    a.pollServerTool('x', { intervalMs: 0, injector });
-    a.pollServerTool('x', { intervalMs: -5, injector });
-    a.pollServerTool('x', { intervalMs: Number.NaN, injector });
-    expect(spy.mock.calls.map((c) => c[1])).toEqual([100, 100, 1000]);
-    spy.mockRestore();
+  it('rejects requests after close', async () => {
+    const { port } = host();
+    const bridge = new McpBridge(port, { name: 't', version: '1' });
+    bridge.close();
+    await expect(bridge.request('x')).rejects.toThrow('Bridge closed');
   });
 });
