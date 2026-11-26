@@ -18,5 +18,13 @@
     "claude"
   ],
   "license": "MIT",
-  "author": "umb0o"
+  "author": "umb0o",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/umb0o/ngx-mcp-apps.git"
+  },
+  "homepage": "https://github.com/umb0o/ngx-mcp-apps#readme",
+  "bugs": {
+    "url": "https://github.com/umb0o/ngx-mcp-apps/issues"
+  }
 }

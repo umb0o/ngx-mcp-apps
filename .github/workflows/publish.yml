@@ -1,0 +1,48 @@
+# Publishes the library to npm when a version tag is pushed (v0.1.2, v1.0.0, ...).
+#
+# It uses npm Trusted Publishing (OIDC): there is no npm token, here or in the repository secrets.
+# npm trusts this exact workflow file in this exact repository, as configured once on npmjs.com:
+#   package Settings -> Trusted publishing -> GitHub Actions
+#   Organization or user: umb0o   Repository: ngx-mcp-apps   Workflow filename: publish.yml
+#
+# To release: set the version in projects/ngx-mcp-apps/package.json, add the CHANGELOG entry,
+# commit, then tag the commit with the same version (git tag v0.1.2) and push the tag.
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write # required for OIDC
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false # never use caching in release builds
+
+      - name: The tag must match the package version
+        run: |
+          VERSION=$(node -p "require('./projects/ngx-mcp-apps/package.json').version")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package version $VERSION" >&2
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+
+      # Publish uses OIDC: no token needed. Provenance is added automatically when the repository is public.
+      - run: npm publish --access public
+        working-directory: dist/ngx-mcp-apps
