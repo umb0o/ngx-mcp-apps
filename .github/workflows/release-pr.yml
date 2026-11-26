@@ -1,0 +1,44 @@
+# Opens the release pull request (dev -> main) automatically, as github-actions[bot], and asks the owner to review it.
+# Since the bot is the author, the owner is a real reviewer: he can approve it, and merging it is the release.
+# Needs: Settings -> Actions -> General -> "Allow GitHub Actions to create and approve pull requests".
+name: Release pull request
+
+on:
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REVIEWER: umb0o
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Open the pull request if dev is ahead of main and none is open
+        run: |
+          AHEAD=$(gh api "repos/$GITHUB_REPOSITORY/compare/main...dev" --jq .ahead_by)
+          OPEN=$(gh pr list --base main --head dev --state open --json number --jq length)
+          echo "dev is $AHEAD commit(s) ahead of main; open pull requests: $OPEN"
+          if [ "$AHEAD" -eq 0 ] || [ "$OPEN" -gt 0 ]; then
+            echo "Nothing to do."
+            exit 0
+          fi
+
+          VERSION=$(node -p "require('./projects/ngx-mcp-apps/package.json').version")
+          {
+            echo "Merging this pull request releases **$VERSION**: the library is built and staged on npm."
+            echo "The staged version becomes public only after approval on npmjs.com."
+            echo
+            echo "## Changelog"
+            echo
+            # The section of CHANGELOG.md for this version
+            awk -v v="## [$VERSION]" 'index($0, v) == 1 { on = 1; next } on && /^## \[/ { exit } on' CHANGELOG.md
+          } > body.md
+
+          gh pr create --base main --head dev --title "Release $VERSION" --body-file body.md --reviewer "$REVIEWER"

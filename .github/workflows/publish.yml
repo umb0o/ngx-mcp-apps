@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
+          # No registry-url here: it would write a placeholder npm token that hides the OIDC login
           package-manager-cache: false # never use caching in release builds
 
       # Staged publishing needs a recent npm
@@ -59,5 +59,5 @@ jobs:
 
       # Staged, not public: approve it on npmjs.com to make it public. OIDC: no token needed.
       - if: steps.version.outputs.release == 'true'
-        run: npm stage publish --access public
+        run: npm stage publish --access public --registry https://registry.npmjs.org/ --loglevel http
         working-directory: dist/ngx-mcp-apps
