@@ -2,7 +2,7 @@ import { type BuilderContext, type BuilderOutput, createBuilder } from '@angular
 import { type ApplicationBuilderOptions, buildApplication } from '@angular/build';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
-import { inlineHtml, SingleFileError } from './inline';
+import { inlineHtml, resolveInside, SingleFileError } from './inline';
 
 export { inlineHtml, SingleFileError, type InlineOptions, type InlineResult } from './inline';
 
@@ -57,19 +57,22 @@ export function writeSingleFile(
 
   const { html, warnings } = inlineHtml(readFileSync(indexPath, 'utf8'), {
     outputFiles: listJavaScript(browserDir),
-    readFile: (path) => {
-      const file = resolve(browserDir, path);
-      if (relative(browserDir, file).startsWith('..')) {
-        throw new Error('the file is outside of the build output');
-      }
-      return readFileSync(file, 'utf8');
-    },
+    // Only files of the build output can end up in the document
+    readFile: (path) => readFileSync(resolveInside(browserDir, path), 'utf8'),
   });
   for (const tag of warnings) {
     context.logger.warn(`Single file: this tag still points to a local file: ${tag}`);
   }
 
-  const target = resolve(context.workspaceRoot, options.singleFile);
+  // The file is written inside the workspace only: a configuration cannot make the build write elsewhere
+  let target: string;
+  try {
+    target = resolveInside(context.workspaceRoot, options.singleFile);
+  } catch {
+    throw new SingleFileError(
+      `"singleFile" must be a path inside the workspace, got "${options.singleFile}".`,
+    );
+  }
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, html);
   const shown = relative(context.workspaceRoot, target).split(sep).join('/');

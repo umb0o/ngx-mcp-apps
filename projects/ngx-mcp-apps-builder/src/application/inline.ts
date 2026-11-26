@@ -3,6 +3,8 @@
  * Pure string work on purpose: no HTML parser dependency, the input is Angular's own generated markup.
  */
 
+import { isAbsolute, relative, resolve } from 'node:path';
+
 /** Raised when the build output cannot be delivered as a single file. */
 export class SingleFileError extends Error {
   override readonly name = 'SingleFileError';
@@ -39,6 +41,27 @@ function parseAttributes(source: string): Map<string, string> {
     attributes.set(match[1].toLowerCase(), match[2] ?? match[3] ?? match[4] ?? '');
   }
   return attributes;
+}
+
+/**
+ * Resolves `path` against `root` and returns it only if it stays inside `root`.
+ * Guards both what is read (files named by the HTML) and what is written (the "singleFile" option).
+ *
+ * @throws Error when the path escapes the folder ("../x", an absolute path, another drive).
+ */
+export function resolveInside(root: string, path: string): string {
+  const base = resolve(root);
+  const target = resolve(base, path);
+  const fromBase = relative(base, target);
+  if (fromBase === '' || fromBase.startsWith('..') || isAbsolute(fromBase)) {
+    throw new Error(`"${path}" is outside of ${base}`);
+  }
+  return target;
+}
+
+/** Escapes a value for a double-quoted HTML attribute. */
+export function escapeAttribute(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 /** True for a URL that points to a file of the build output, false for http(s), data:, //host, #hash. */
@@ -122,7 +145,7 @@ export function inlineHtml(html: string, options: InlineOptions): InlineResult {
       // value, kept in data-beasties-media (or set by an onload handler), once it is loaded
       const deferred = attributes.has('data-beasties-media') || attributes.has('onload');
       const media = deferred ? attributes.get('data-beasties-media') : attributes.get('media');
-      return `<style${media && media !== 'all' ? ` media="${media}"` : ''}>${css}</style>`;
+      return `<style${media && media !== 'all' ? ` media="${escapeAttribute(media)}"` : ''}>${css}</style>`;
     }
     if (rel.includes('modulepreload') || rel.includes('preload') || rel.includes('prefetch')) {
       preloaded.push(toOutputPath(href));
@@ -141,7 +164,7 @@ export function inlineHtml(html: string, options: InlineOptions): InlineResult {
     code += content + '\n';
     // Angular's bundles are ES modules; a classic script (the "scripts" option) must stay classic
     const type = attributes.get('type');
-    return `<script${type ? ` type="${type}"` : ''}>${escapeInlineScript(content)}</script>`;
+    return `<script${type ? ` type="${escapeAttribute(type)}"` : ''}>${escapeInlineScript(content)}</script>`;
   });
 
   // Whatever JavaScript is still on disk and is needed by the document cannot be reached from one file

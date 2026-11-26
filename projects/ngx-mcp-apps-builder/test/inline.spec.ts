@@ -1,5 +1,11 @@
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { inlineHtml, SingleFileError } from '../src/application/inline';
+import {
+  escapeAttribute,
+  inlineHtml,
+  resolveInside,
+  SingleFileError,
+} from '../src/application/inline';
 
 const files: Record<string, string> = {
   'main-ABC.js': 'console.log("main");',
@@ -181,5 +187,26 @@ describe('inlineHtml', () => {
     const { html, warnings } = inline('<link rel="manifest" href="manifest.webmanifest">');
     expect(html).toContain('manifest.webmanifest');
     expect(warnings).toHaveLength(1);
+  });
+});
+
+describe('hardening', () => {
+  it('resolveInside accepts paths inside the folder and rejects the ones that escape it', () => {
+    const root = resolve('some', 'workspace');
+    expect(resolveInside(root, 'public/app.html')).toBe(resolve(root, 'public', 'app.html'));
+    expect(() => resolveInside(root, '../outside.html')).toThrow('outside');
+    expect(() => resolveInside(root, 'a/../../outside.html')).toThrow('outside');
+    expect(() => resolveInside(root, resolve('elsewhere', 'x.html'))).toThrow('outside');
+    expect(() => resolveInside(root, '.')).toThrow('outside');
+  });
+
+  it('escapes attribute values copied into the generated tags', () => {
+    expect(escapeAttribute('a"b<c&d')).toBe('a&quot;b&lt;c&amp;d');
+    const { html } = inlineHtml(
+      `<link rel="stylesheet" href="s.css" media='x" onload="alert(1)'>`,
+      { readFile: () => 'body{}' },
+    );
+    expect(html).not.toContain('onload="alert(1)"');
+    expect(html).toContain('media="x&quot; onload=&quot;alert(1)"');
   });
 });
