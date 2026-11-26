@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [0.1.2] - 2026-11-26
+
+### Changed
+
+- The package now links to its source repository (`repository`, `homepage`, `bugs`).
+- Releases are built and staged on npm by GitHub Actions with trusted publishing, when a pull request is merged into `main`.
+- Source formatted with Prettier. No change to the behaviour of the published code.
+
 ## [0.1.1] - 2026-11-26
 
 ### Changed
