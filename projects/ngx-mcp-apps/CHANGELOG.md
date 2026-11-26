@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [0.1.1] - 2026-11-26
+
+### Changed
+
+- README: the size is stated on its own (about 13 KB minified, under 5 KB gzipped), without comparisons with other packages.
+- Tests regrouped as one spec file per source file. No change to the published code.
+
 ## [0.1.0] - 2026-11-25
 
 First public release.

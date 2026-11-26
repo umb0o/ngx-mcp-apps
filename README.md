@@ -6,7 +6,7 @@ Angular runtime for [MCP Apps](https://modelcontextprotocol.io/seps/1865-mcp-app
 Write an Angular app, return it from an MCP server, and it runs as an interactive UI inside Claude and other MCP hosts.
 
 - **Signals first.** Connection status, tool data, host theme and display mode are signals.
-- **No dependencies.** The view side of the protocol is implemented here: about 13 KB minified (under 5 KB gzipped), instead of the ~600 KB that the official runtime adds with its SDK and zod.
+- **Lightweight, no dependencies.** The view side of the protocol is implemented here: about 13 KB minified, under 5 KB gzipped.
 - **Checked at runtime.** Every message from the host goes through small hand-written type guards.
 - **Tested against the official host.** The test suite connects the library to `AppBridge` from `@modelcontextprotocol/ext-apps`.
 
@@ -194,7 +194,7 @@ What is up to you:
 - **The host is trusted, the content is not.** Tool results come from your server and, through it, from the model:
   render them with Angular bindings (`{{ }}`), not with `[innerHTML]`.
 - **Do not put secrets in the HTML.** Whoever can read the resource from your MCP server can read the whole app.
-- **Outgoing messages go to any parent origin by default**, as in the official SDK, because hosts wrap the app in a
+- **Outgoing messages go to any parent origin by default**, because hosts wrap the app in a
   sandbox whose origin you usually do not know. If you do know it, set `allowedOrigins`.
 - **Protect your MCP server.** An unauthenticated server lets anyone with the URL call its tools.
 - `log: true` stores host and server data in memory to show it: use it while debugging.
@@ -218,11 +218,9 @@ This is an independent, unofficial implementation. It is inspired by, and owes i
 - [`@modelcontextprotocol/ext-apps`](https://github.com/modelcontextprotocol/ext-apps) (MIT / Apache-2.0), the official
   MCP Apps SDK: the handshake, the message flow and the auto-resize measurement are modelled on it, and its `AppBridge`
   is used in the test suite. No code from it is shipped in this package.
-- [zod](https://zod.dev) (MIT), which the official SDK uses to validate messages: the runtime type guards here follow
-  the same idea, written by hand for the messages a view receives. zod is not a dependency of this package.
 - The [MCP Apps specification (SEP-1865)](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp).
 
-"MCP", "Model Context Protocol", "Claude", "ChatGPT" and "zod" are names of their respective owners and are used only
+"MCP", "Model Context Protocol", "Claude" and "ChatGPT" are names of their respective owners and are used only
 to describe compatibility and credit. This project is not affiliated with or endorsed by any of them.
 
 ## License
