@@ -26,7 +26,7 @@
   "main": "./application/index.js",
   "types": "./application/index.d.ts",
   "peerDependencies": {
-    "@angular-devkit/architect": ">=0.2203.0 <0.2300.0",
-    "@angular/build": "^22.3.0"
+    "@angular-devkit/architect": ">=0.1800.0 <0.2300.0",
+    "@angular/build": ">=18.0.0 <23.0.0"
   }
 }

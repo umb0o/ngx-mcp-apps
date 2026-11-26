@@ -2,7 +2,7 @@
   "name": "ngx-mcp-apps",
   "version": "0.1.2",
   "peerDependencies": {
-    "@angular/core": "^22.3.0"
+    "@angular/core": ">=18.0.0 <23.0.0"
   },
   "sideEffects": false,
   "exports": {

@@ -13,7 +13,17 @@ is inlined.
 npm install -D ngx-mcp-apps-builder
 ```
 
-It needs `@angular/build` 22.3 or later, which an Angular 22 application already has.
+## Compatibility
+
+Angular 18, 19, 20, 21 and 22, the same versions as the `ngx-mcp-apps` library
+(`@angular/build` `>=18.0.0 <23.0.0`, `@angular-devkit/architect` `>=0.1800.0 <0.2300.0`).
+
+The builder needs the `@angular/build` package. An application created with Angular 20 or later already
+has it; in an Angular 18 or 19 application it is installed together with `@angular-devkit/build-angular`.
+
+The list of accepted options is the one of the Angular 22 application builder. An option that was added
+after your Angular version (for example `outputMode` on Angular 18) passes the validation, but your
+version of `@angular/build` does not know it.
 
 ## Use
 

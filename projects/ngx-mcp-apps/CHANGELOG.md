@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [Unreleased]
+
+### Added
+
+- **`ngx-mcp-apps-builder`**, a new package: an Angular CLI builder (`ngx-mcp-apps-builder:application`) that runs
+  Angular's official application builder and, with the `singleFile` option, writes the app as one self-contained
+  HTML file. The build fails if the app needs lazy-loaded chunks.
+
+### Changed
+
+- **Wider Angular support.** The library now works with Angular 18, 19, 20, 21 and 22
+  (`@angular/core` `>=18.0.0 <23.0.0`); it required Angular 22.3 before. The builder supports the same versions
+  (`@angular/build` `>=18.0.0 <23.0.0`, `@angular-devkit/architect` `>=0.1800.0 <0.2300.0`). Each major was checked
+  with a new application: a production build with the builder, then the page opened in a browser.
+- README rewritten around a quick start, with a compatibility table for both packages.
+
 ## [0.1.2] - 2026-11-26
 
 ### Changed
