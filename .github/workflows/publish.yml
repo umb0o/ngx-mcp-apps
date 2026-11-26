@@ -1,25 +1,27 @@
-# Publishes the library to npm when a version tag is pushed (v0.1.2, v1.0.0, ...).
+# Releases happen only through pull requests: when a pull request from dev is merged into main and the version in
+# projects/ngx-mcp-apps/package.json is not on npm yet, this workflow builds the library and STAGES it on npm.
+# A staged version is not public: it becomes public only when the owner approves it on npmjs.com.
 #
 # It uses npm Trusted Publishing (OIDC): there is no npm token, here or in the repository secrets.
 # npm trusts this exact workflow file in this exact repository, as configured once on npmjs.com:
 #   package Settings -> Trusted publishing -> GitHub Actions
 #   Organization or user: umb0o   Repository: ngx-mcp-apps   Workflow filename: publish.yml
+#   ("npm publish" left unchecked: only staged publishing is allowed)
 #
-# To release: set the version in projects/ngx-mcp-apps/package.json, add the CHANGELOG entry,
-# commit, then tag the commit with the same version (git tag v0.1.2) and push the tag.
-name: Publish to npm
+# To release: on dev, set the version in projects/ngx-mcp-apps/package.json and add the CHANGELOG entry;
+# open a pull request into main and merge it; then approve the staged version on npmjs.com.
+name: Release to npm
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
 
 permissions:
   id-token: write # required for OIDC
   contents: read
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -30,19 +32,32 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           package-manager-cache: false # never use caching in release builds
 
-      - name: The tag must match the package version
+      # Staged publishing needs a recent npm
+      - run: npm install -g npm@latest
+
+      - name: Is this version already on npm?
+        id: version
         run: |
           VERSION=$(node -p "require('./projects/ngx-mcp-apps/package.json').version")
-          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package version $VERSION" >&2
-            exit 1
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "ngx-mcp-apps@$VERSION" version >/dev/null 2>&1; then
+            echo "Version $VERSION is already on npm: nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version $VERSION is new: it will be staged."
+            echo "release=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npm ci
-      - run: npm run format:check
-      - run: npm test
-      - run: npm run build
+      - if: steps.version.outputs.release == 'true'
+        run: npm ci
+      - if: steps.version.outputs.release == 'true'
+        run: npm run format:check
+      - if: steps.version.outputs.release == 'true'
+        run: npm test
+      - if: steps.version.outputs.release == 'true'
+        run: npm run build
 
-      # Publish uses OIDC: no token needed. Provenance is added automatically when the repository is public.
-      - run: npm publish --access public
+      # Staged, not public: approve it on npmjs.com to make it public. OIDC: no token needed.
+      - if: steps.version.outputs.release == 'true'
+        run: npm stage publish --access public
         working-directory: dist/ngx-mcp-apps
