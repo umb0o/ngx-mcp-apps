@@ -1,0 +1,4 @@
+# Vitest cache, and what the end-to-end test creates in test/fixture
+node_modules
+/test/fixture/dist
+/test/fixture/.angular

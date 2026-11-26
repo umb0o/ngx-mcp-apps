@@ -1,0 +1,11 @@
+{
+  "title": "Application schema for Build Facade, extended for MCP Apps.",
+  "description": "Options of the official application builder plus the single-file output.",
+  "properties": {
+    "singleFile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path, relative to the workspace root, of one self-contained HTML file written after each successful build: the built index.html with every local script and stylesheet inlined."
+    }
+  }
+}
