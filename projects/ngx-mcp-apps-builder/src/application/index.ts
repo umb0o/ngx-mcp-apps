@@ -1,10 +1,19 @@
 import { type BuilderContext, type BuilderOutput, createBuilder } from '@angular-devkit/architect';
 import { type ApplicationBuilderOptions, buildApplication } from '@angular/build';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { inlineHtml, resolveInside, SingleFileError } from './inline';
+import { withoutCriticalCss } from './optimization';
 
-export { inlineHtml, SingleFileError, type InlineOptions, type InlineResult } from './inline';
+export {
+  inlineCssUrls,
+  inlineHtml,
+  SingleFileError,
+  type CssUrlsOptions,
+  type CssUrlsResult,
+  type InlineOptions,
+  type InlineResult,
+} from './inline';
 
 /** Options of the official application builder, plus the single-file output. */
 export type SingleFileApplicationOptions = ApplicationBuilderOptions & {
@@ -32,10 +41,18 @@ function indexFileName(options: ApplicationBuilderOptions): string {
   return 'index.html';
 }
 
-function listJavaScript(dir: string): string[] {
+function listFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: 'utf8' })
-    .filter((file) => /\.m?js$/i.test(file))
+    .filter((file) => statSync(join(dir, file)).isFile())
     .map((file) => file.split(sep).join('/'));
+}
+
+function origin(url: string): string {
+  return /^(?:https?:)?\/\/[^/?#]+/i.exec(url)?.[0] ?? url;
+}
+
+function list(items: readonly string[]): string {
+  return items.map((item) => `\n  - ${item}`).join('');
 }
 
 function formatSize(bytes: number): string {
@@ -55,13 +72,37 @@ export function writeSingleFile(
     throw new SingleFileError(`Cannot find the built index.html in ${browserDir}.`);
   }
 
-  const { html, warnings } = inlineHtml(readFileSync(indexPath, 'utf8'), {
-    outputFiles: listJavaScript(browserDir),
+  let embeddedBytes = 0;
+  const { html, warnings, embedded, remote, assets } = inlineHtml(readFileSync(indexPath, 'utf8'), {
+    outputFiles: listFiles(browserDir),
     // Only files of the build output can end up in the document
     readFile: (path) => readFileSync(resolveInside(browserDir, path), 'utf8'),
+    readBinaryFile: (path) => {
+      const bytes = readFileSync(resolveInside(browserDir, path));
+      embeddedBytes += bytes.byteLength;
+      return bytes;
+    },
   });
-  for (const tag of warnings) {
-    context.logger.warn(`Single file: this tag still points to a local file: ${tag}`);
+  if (warnings.length > 0) {
+    context.logger.warn(
+      'Single file: these references still point to local files, which are not part of the single ' +
+        `file and will not load:${list(warnings)}`,
+    );
+  }
+  if (assets.length > 0) {
+    context.logger.warn(
+      'Single file: the application code names these files of the build output (for example in an ' +
+        '<img src> of a template). They are not part of the single file and will not load: embed ' +
+        `them as data: URLs, or use them from CSS with url(...):${list(assets)}`,
+    );
+  }
+  if (remote.length > 0) {
+    const domains = [...new Set(remote.map(origin))];
+    context.logger.warn(
+      `Single file: the document still loads these remote URLs:${list(remote)}\n` +
+        'Inside an MCP host they load only if the MCP server declares their domains in the CSP of ' +
+        `the UI resource (_meta.ui.csp.resourceDomains): ${domains.join(', ')}`,
+    );
   }
 
   // The file is written inside the workspace only: a configuration cannot make the build write elsewhere
@@ -76,7 +117,12 @@ export function writeSingleFile(
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, html);
   const shown = relative(context.workspaceRoot, target).split(sep).join('/');
-  return `Single file: ${shown} (${formatSize(Buffer.byteLength(html))})`;
+  const summary = `Single file: ${shown} (${formatSize(Buffer.byteLength(html))})`;
+  return embedded.length === 0
+    ? summary
+    : `${summary}, with ${embedded.length} font or image ` +
+        (embedded.length === 1 ? 'file embedded as data: URL' : 'files embedded as data: URLs') +
+        ` (${formatSize(embeddedBytes)} before base64)`;
 }
 
 /**
@@ -93,6 +139,7 @@ export async function* buildSingleFileApplication(
     return;
   }
 
+  applicationOptions.optimization = withoutCriticalCss(applicationOptions.optimization);
   for await (const result of buildApplication(applicationOptions, context)) {
     if (!result.success) {
       yield result;

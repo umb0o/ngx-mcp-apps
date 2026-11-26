@@ -1,5 +1,5 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: #fdf6e3;
+  background: #fdf6e3 url('./dot.png');
 }

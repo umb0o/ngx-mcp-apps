@@ -3,11 +3,13 @@ import { Component, signal } from '@angular/core';
 @Component({
   selector: 'app-root',
   template: `<button type="button" (click)="count.set(count() + 1)">
-    fixture-count {{ count() }}
-  </button>`,
+      fixture-count {{ count() }}
+    </button>
+    <img src="logo.svg" alt="" />`,
   styles: `
     button {
       color: rebeccapurple;
+      background-image: url('./dot.png');
     }
   `,
 })

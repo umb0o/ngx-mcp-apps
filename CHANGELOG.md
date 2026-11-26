@@ -11,6 +11,14 @@ Until 1.0.0 the API may change between minor versions.
 - **`ngx-mcp-apps-builder`**, a new package: an Angular CLI builder (`ngx-mcp-apps-builder:application`) that runs
   Angular's official application builder and, with the `singleFile` option, writes the app as one self-contained
   HTML file. The build fails if the app needs lazy-loaded chunks.
+  - Fonts and images that the CSS references with `url(...)` are embedded as `data:` URLs: global styles, `<style>`
+    elements of `index.html` and component styles. A referenced file that is missing from the build output fails the build.
+  - Critical CSS inlining is turned off when `singleFile` is set, so that those files are embedded once.
+  - Warnings list what the single file does not contain: remote URLs (they need the domains declared in the CSP of the
+    UI resource), files that the application code names (for example an `<img src>` of a template) and local
+    references of the static `index.html`.
+  - The error for extra JavaScript files tells dynamic imports (lazy loading), statically imported shared chunks and
+    web worker scripts apart.
 
 ### Changed
 

@@ -51,6 +51,15 @@ describe('ngx-mcp-apps-builder:application', () => {
     // The application and its global styles are really inside
     expect(html).toContain('fixture-count');
     expect(html).toContain('#fdf6e3');
+    // The image of the global stylesheet and of the component style is embedded, in both places
+    expect(output).toMatch(/1 font or image file embedded as data: URL/);
+    expect(html.match(/url\("?data:image\/png;base64,/g)).toHaveLength(2);
+    expect(html).not.toMatch(/media\/dot/);
+    // What cannot be part of the file is reported: the image of the template, the remote script
+    expect(output).toMatch(/not part of the single file[^]*- logo\.svg/);
+    expect(output).toMatch(/remote URLs:\s*- https:\/\/example\.com\/remote\.js/);
+    expect(output).toMatch(/resourceDomains\): https:\/\/example\.com/);
+    expect(html).toContain('<script src="https://example.com/remote.js"');
     // The external link of the source index.html is untouched
     expect(html).toContain('href="https://example.com"');
     // The "</script>" inside a string of the application did not close the element
@@ -72,6 +81,8 @@ describe('ngx-mcp-apps-builder:application', () => {
     const { status, output } = ngBuild('--configuration', 'lazy');
     expect(status).not.toBe(0);
     expect(output).toMatch(/cannot use lazy loading/);
+    expect(output).toMatch(/dynamic import\(\): chunk-[A-Z0-9]+\.js/);
+    expect(output).toMatch(/import statically: chunk-[A-Z0-9]+\.js/);
     expect(existsSync(join(fixture, 'dist/lazy.html'))).toBe(false);
   });
 });
