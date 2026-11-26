@@ -1,15 +1,31 @@
-# Runs on every push and pull request: formatting, tests and build. It never publishes.
+# Runs on every push to dev and on every pull request: formatting, tests and build. It never publishes.
+# main is protected: changes arrive only through pull requests, and only from the dev branch.
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
+  # Pull requests into main are accepted only from dev
+  source-branch:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only dev can be merged into main
+        run: |
+          if [ "$HEAD_REF" != "dev" ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "Pull requests into main must come from the dev branch of this repository (got $HEAD_REPO:$HEAD_REF)." >&2
+            exit 1
+          fi
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+
   check:
     runs-on: ubuntu-latest
     steps:
