@@ -153,7 +153,7 @@ describe('inlineHtml', () => {
       });
     expect(run).toThrow(SingleFileError);
     expect(run).toThrow(/chunk-LAZY\.js/);
-    expect(run).toThrow(/cannot use lazy loading/);
+    expect(run).toThrow(/must be merged into the document first/);
   });
 
   it('fails on a shared chunk that is only preloaded', () => {

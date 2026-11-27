@@ -33,6 +33,121 @@
           }
         }
       }
+    },
+    "example": {
+      "projectType": "application",
+      "root": "projects/example",
+      "sourceRoot": "projects/example/src",
+      "prefix": "mcp",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/example",
+            "browser": "projects/example/src/main.ts",
+            "index": "projects/example/src/index.html",
+            "tsConfig": "projects/example/tsconfig.app.json",
+            "styles": ["projects/example/src/styles.css"],
+            "singleFile": "dist/example.html",
+            "outputHashing": "none"
+          }
+        }
+      }
+    },
+    "one-file": {
+      "projectType": "application",
+      "root": "projects/one-file",
+      "sourceRoot": "projects/one-file/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/one-file",
+            "browser": "projects/one-file/src/main.ts",
+            "index": "projects/one-file/src/index.html",
+            "tsConfig": "projects/one-file/tsconfig.app.json",
+            "singleFile": "dist/one-file.html",
+            "outputHashing": "none"
+          }
+        }
+      }
+    },
+    "gallery": {
+      "projectType": "application",
+      "root": "projects/gallery",
+      "sourceRoot": "projects/gallery/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/gallery",
+            "browser": "projects/gallery/src/main.ts",
+            "index": "projects/gallery/src/index.html",
+            "tsConfig": "projects/gallery/tsconfig.app.json",
+            "singleFile": "dist/gallery.html",
+            "outputHashing": "none"
+          }
+        }
+      }
+    },
+    "chart": {
+      "projectType": "application",
+      "root": "projects/chart",
+      "sourceRoot": "projects/chart/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/chart",
+            "browser": "projects/chart/src/main.ts",
+            "index": "projects/chart/src/index.html",
+            "tsConfig": "projects/chart/tsconfig.app.json",
+            "singleFile": "dist/chart.html",
+            "outputHashing": "none"
+          }
+        }
+      }
+    },
+    "routing": {
+      "projectType": "application",
+      "root": "projects/routing",
+      "sourceRoot": "projects/routing/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/routing",
+            "browser": "projects/routing/src/main.ts",
+            "index": "projects/routing/src/index.html",
+            "tsConfig": "projects/routing/tsconfig.app.json",
+            "singleFile": "dist/routing.html",
+            "outputHashing": "none"
+          }
+        }
+      }
+    },
+    "security": {
+      "projectType": "application",
+      "root": "projects/security",
+      "sourceRoot": "projects/security/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/security",
+            "browser": "projects/security/src/main.ts",
+            "index": "projects/security/src/index.html",
+            "tsConfig": "projects/security/tsconfig.app.json",
+            "singleFile": "dist/security.html",
+            "outputHashing": "none"
+          }
+        }
+      }
     }
   }
 }

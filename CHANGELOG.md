@@ -4,6 +4,23 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [0.3.0] - 2026-11-27
+
+### Added
+
+- **Lazy loading no longer fails the build.** The builder merges lazy chunks (lazy routes, `@defer` blocks, dynamic
+  `import()`) and the shared chunks of code splitting into the single file, with the esbuild that `@angular/build`
+  installs. The code works as written; everything is loaded with the app, so the saving of lazy loading is lost.
+  A web worker still fails the build.
+- `findSplit` and `bundleModules` are exported, with the `merged` option of `inlineHtml`, for those who use the
+  functions of the builder directly.
+
+### Changed
+
+- `writeSingleFile` is now asynchronous: it returns a promise of the summary.
+
+The library itself is unchanged: it is released with the same version as the builder.
+
 ## [0.2.1] - 2026-11-27
 
 ### Added

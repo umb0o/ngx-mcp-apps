@@ -1,6 +1,6 @@
 {
   "name": "ngx-mcp-apps-builder",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Angular CLI builder for MCP Apps: builds an Angular application into one self-contained HTML file.",
   "keywords": [
     "angular",

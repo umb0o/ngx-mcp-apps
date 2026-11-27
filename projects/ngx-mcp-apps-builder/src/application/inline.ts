@@ -25,6 +25,22 @@ export interface InlineOptions {
    * assets that the JavaScript names but the document does not contain.
    */
   outputFiles?: readonly string[];
+  /**
+   * The module scripts of index.html and the chunks they load, bundled into one module (see `findSplit`).
+   * The first of `entries` is replaced by `code`, the others are removed, and `files` count as inlined.
+   * Without it, chunks that index.html does not load directly are an error.
+   */
+  merged?: MergedModules;
+}
+
+/** One module that stands for several files of the build output. */
+export interface MergedModules {
+  /** The bundle: the entries, in order, with every chunk they import inside. */
+  code: string;
+  /** The module scripts of index.html that the bundle replaces. */
+  entries: readonly string[];
+  /** Every file that is inside the bundle: the entries and the chunks. */
+  files: readonly string[];
 }
 
 export interface InlineResult {
@@ -263,7 +279,59 @@ export function inlineCssUrls(
 // url(./media/a-HASH.png), also written as url(\"…\") inside a JavaScript string
 const JS_CSS_URL = /url\((\\?["']|)([^)"'\\\s]+)\1\)/g;
 
-type SplitKind = 'shared' | 'dynamic' | 'worker';
+/** How a file that index.html does not load directly is reached. */
+export type SplitKind = 'shared' | 'dynamic' | 'worker';
+
+/** What the build left outside of index.html. */
+export interface SplitPlan {
+  /** The local module scripts of index.html, in document order. */
+  entries: string[];
+  /** The JavaScript files those scripts still need, and how each one is reached. */
+  files: Map<string, SplitKind>;
+}
+
+/**
+ * Looks at the built index.html and tells which JavaScript files of the build output it needs without
+ * loading them directly: lazy chunks (`dynamic`), shared chunks of code splitting (`shared`), web worker
+ * scripts (`worker`). The first two kinds can be bundled into one module; a worker cannot.
+ */
+export function findSplit(
+  html: string,
+  options: Pick<InlineOptions, 'readFile' | 'outputFiles'>,
+): SplitPlan {
+  const outputFiles = (options.outputFiles ?? []).map((file) => file.replace(/\\/g, '/'));
+  const entries: string[] = [];
+  const loaded = new Set<string>();
+  const preloaded: string[] = [];
+  let code = '';
+  for (const [, attrs] of html.replace(/<!--[\s\S]*?-->/g, '').matchAll(SCRIPT_TAG)) {
+    const attributes = parseAttributes(attrs);
+    const src = attributes.get('src');
+    if (src === undefined || !isLocalUrl(src)) continue;
+    const path = toOutputPath(src);
+    loaded.add(path);
+    if (attributes.get('type') === 'module') entries.push(path);
+    try {
+      code += options.readFile(path) + '\n';
+    } catch {
+      // inlineHtml reports a script that cannot be read
+    }
+  }
+  for (const [, attrs] of html.matchAll(LINK_TAG)) {
+    const attributes = parseAttributes(attrs);
+    const href = attributes.get('href') ?? '';
+    const rel = relTokens(attributes);
+    if (isLocalUrl(href) && (rel.includes('modulepreload') || rel.includes('preload'))) {
+      preloaded.push(toOutputPath(href));
+    }
+  }
+  const candidates = outputFiles.filter((file) => /\.m?js$/i.test(file) && !loaded.has(file));
+  for (const file of preloaded) {
+    if (/\.m?js$/i.test(file) && !loaded.has(file) && !candidates.includes(file))
+      candidates.push(file);
+  }
+  return { entries, files: findSplitFiles(code, candidates, preloaded, options.readFile) };
+}
 
 /**
  * Finds the JavaScript files of the build output that the inlined code still needs, following the
@@ -318,14 +386,17 @@ function splitError(kinds: Map<string, SplitKind>): SingleFileError {
   ];
   if (dynamic.length > 0) {
     parts.push(
-      `Loaded on demand with a dynamic import(): ${dynamic.join(', ')}. A single-file app cannot use lazy ` +
-        'loading: replace loadComponent/loadChildren, @defer blocks and dynamic import() with static ' +
-        'imports. A dependency can be the cause too, for example provideAnimationsAsync().',
+      `Loaded on demand with a dynamic import(): ${dynamic.join(', ')}. ` +
+        (workers.length > 0
+          ? 'These alone would be merged into the file: the worker scripts are what prevents it.'
+          : 'They must be merged into the document first (findSplit and bundleModules do it; the builder ' +
+            'does it by itself), or lazy loading replaced with static imports.'),
     );
   }
   if (workers.length > 0) {
     parts.push(
-      `Web worker scripts: ${workers.join(', ')}. A worker is a separate file: run that code in the page.`,
+      `Web worker scripts: ${workers.join(', ')}. A worker is a separate file and cannot be merged into ` +
+        'the document: run that code in the page.',
     );
   }
   if (shared.length > 0) {
@@ -334,9 +405,8 @@ function splitError(kinds: Map<string, SplitKind>): SingleFileError {
         (dynamic.length > 0
           ? 'This is code splitting, not lazy loading by itself: Angular moves there the code used both ' +
             'by the initial scripts and by the files listed above, and stops doing so once those are gone.'
-          : 'This is code splitting, not lazy loading: no dynamic import() was found. The Angular ' +
-            'application builder has no option to turn code splitting off, so this build cannot be ' +
-            'written as a single file.'),
+          : 'This is code splitting, not lazy loading: no dynamic import() was found. It can be merged ' +
+            'into the document like a lazy chunk.'),
     );
   }
   return new SingleFileError(parts.join('\n  - '));
@@ -468,7 +538,17 @@ export function inlineHtml(html: string, options: InlineOptions): InlineResult {
       if (isRemoteUrl(src)) remote.push(src);
       return tag;
     }
-    const content = embedJsUrls(read(toOutputPath(src), `<script src="${src}">`));
+    const path = toOutputPath(src);
+    const merged = options.merged;
+    if (merged?.entries.includes(path)) {
+      // The bundle takes the place of the first module script; it already contains the others
+      if (path !== merged.entries[0]) return '';
+      inlined.push(...merged.files);
+      const bundle = embedJsUrls(merged.code);
+      code += bundle + '\n';
+      return `<script type="module">${escapeInlineScript(bundle)}</script>`;
+    }
+    const content = embedJsUrls(read(path, `<script src="${src}">`));
     code += content + '\n';
     // Angular's bundles are ES modules; a classic script (the "scripts" option) must stay classic
     const type = attributes.get('type');

@@ -1,0 +1,183 @@
+<div class="hero">
+  <div class="hero-copy">
+    <h1>Your app, inside the chat</h1>
+    <p class="lede">
+      When people ask an AI assistant such as Claude for something, it can answer with your app: a
+      chart, a list to tick, a booking form. It appears right in the conversation, ready to use.
+    </p>
+    <p class="actions">
+      <a class="go" href="example.html">See a real one running</a>
+      <a class="go quiet" href="#developers">For developers</a>
+    </p>
+  </div>
+
+  <div class="scene" data-scene>
+    <p class="sr-only">
+      An animated demonstration with three short stories. Someone asks how sales went this quarter,
+      and the assistant answers with a bar chart of sample data where the best month is highlighted.
+      Someone asks what to pack for Lisbon, and the assistant answers with a packing list where two
+      of four items get ticked. Someone asks to book a table for Friday at 8, and the assistant
+      answers with a choice of times; 8:00 is picked and the booking is confirmed.
+    </p>
+    <div class="chatwin" aria-hidden="true">
+      <div class="chatwin-head"><span class="face"></span>Assistant</div>
+      <div class="chatwin-body" data-body>
+        <div class="story is-on">
+          <p class="ask on">How did we sell this quarter?</p>
+          <p class="say on">September was the best month so far.</p>
+          <div class="card chart on">
+            <p class="card-title">Sales by month <span class="sample">sample data</span></p>
+            <div class="bars on">
+              <span class="bar" style="--h: 62%"><i></i><b>Apr</b></span>
+              <span class="bar" style="--h: 55%"><i></i><b>May</b></span>
+              <span class="bar" style="--h: 72%"><i></i><b>Jun</b></span>
+              <span class="bar" style="--h: 80%"><i></i><b>Jul</b></span>
+              <span class="bar" style="--h: 74%"><i></i><b>Aug</b></span>
+              <span class="bar hot" style="--h: 96%"><em>48k</em><i></i><b>Sep</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="story">
+          <p class="ask on">What should I pack for Lisbon?</p>
+          <p class="say on">Here is a list. Tick things off as you pack.</p>
+          <div class="card pack on" data-packed="2">
+            <p class="card-title">Weekend in Lisbon</p>
+            <ul class="ticks">
+              <li class="on">Passport</li>
+              <li class="on">Phone charger</li>
+              <li>Walking shoes</li>
+              <li>Sunscreen</li>
+            </ul>
+            <div class="meter"><span></span></div>
+            <p class="card-note" data-count>2 of 4 packed</p>
+          </div>
+        </div>
+
+        <div class="story">
+          <p class="ask on">Book a table for Friday at 8</p>
+          <p class="say on">These times are free on Friday evening.</p>
+          <div class="card book on">
+            <p class="card-title">A table for two, Friday</p>
+            <div class="slots">
+              <span>7:00</span>
+              <span>7:30</span>
+              <span class="picked">8:00</span>
+              <span>8:30</span>
+              <span>9:00</span>
+              <span>9:30</span>
+            </div>
+            <p class="booked on">Booked for Friday at 8:00 pm</p>
+          </div>
+        </div>
+
+        <svg class="pointer" data-pointer viewBox="0 0 20 22" width="20" height="22">
+          <path d="M2 1.5v16.2l4.4-3.9 2.9 6.6 2.9-1.3-2.9-6.5 5.9-.3z" />
+        </svg>
+      </div>
+      <div class="composer">
+        <span class="typed" data-typed></span>
+        <span class="send"></span>
+      </div>
+    </div>
+    <div class="scene-controls" data-controls hidden>
+      <button type="button" class="toggle" data-toggle>Pause</button>
+      <button type="button" data-pick aria-pressed="true">Sales chart</button>
+      <button type="button" data-pick aria-pressed="false">Packing list</button>
+      <button type="button" data-pick aria-pressed="false">Table booking</button>
+    </div>
+  </div>
+</div>
+
+<section class="uses" aria-labelledby="uses-title">
+  <h2 id="uses-title">What it is good for</h2>
+  <div class="uses-list">
+    <div>
+      <h3>Numbers you can see</h3>
+      <p>
+        A question about sales gets a chart. One look says what a long answer full of figures would
+        take a minute to explain.
+      </p>
+    </div>
+    <div>
+      <h3>Things to do, not just read</h3>
+      <p>
+        A packing list people can tick, an order they can change. The assistant hands over something
+        that works, not a paragraph to copy somewhere else.
+      </p>
+    </div>
+    <div>
+      <h3>The job finished in place</h3>
+      <p>
+        Pick a time, confirm, done. Nobody has to leave the conversation and start again on another
+        site.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="dev" id="developers" aria-labelledby="dev-title">
+  <div class="dev-head">
+    <div>
+      <h2 id="dev-title">For developers</h2>
+      <p>
+        These are MCP Apps: small web pages that a chat host such as Claude shows when the model
+        calls a tool. <code>ngx-mcp-apps</code> lets you write one as a normal Angular application,
+        and builds it into the single HTML file that hosts expect.
+      </p>
+    </div>
+    <div class="install">
+      <pre><code>ng add ngx-mcp-apps-builder</code></pre>
+      <a class="go" href="start.html">Get started</a>
+    </div>
+  </div>
+
+  <div class="facts">
+    <div>
+      <h3>Signals, not listeners</h3>
+      <p>
+        The connection, the tool result, the host theme and the display mode are signals. A template
+        reads them like any other state.
+      </p>
+    </div>
+    <div>
+      <h3>About 5 kB, nothing else</h3>
+      <p>
+        The app side of the protocol is implemented in the library: under 5 kB gzipped, with no
+        runtime dependencies.
+      </p>
+    </div>
+    <div>
+      <h3>One file out of <code>ng build</code></h3>
+      <p>
+        The builder runs Angular's own application builder, then inlines scripts, styles, fonts and
+        images of the CSS. If something cannot fit in one file, the build fails and says what.
+      </p>
+    </div>
+    <div>
+      <h3>Angular 18 to 22</h3>
+      <p>Each major is checked with a new application: installed, built, opened in a browser.</p>
+    </div>
+  </div>
+
+  <div class="next">
+    <a href="components.html">
+      <strong>Components to copy</strong>
+      Nine files most apps need: tool states, a button that calls a tool, the host theme.
+    </a>
+    <a href="server.html">
+      <strong>The server side</strong>
+      The smallest MCP server that opens the app, in sixty lines of Node.
+    </a>
+    <a href="agents.html">
+      <strong>For AI agents</strong>
+      This documentation as plain text, and a skill that teaches an agent to use the library.
+    </a>
+  </div>
+</section>
+
+<p class="disclaimer">
+  Version
+  <!-- version -->. MIT licence. Unofficial community library, not affiliated with or endorsed by
+  Anthropic, OpenAI or the Model Context Protocol project.
+</p>

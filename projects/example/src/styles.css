@@ -1,0 +1,21 @@
+/* The host draws the background: the app keeps its own transparent and follows the host theme. */
+:root {
+  color-scheme: light dark;
+  font:
+    15px/1.5 system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  color: #16203a;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  color: #e6eaf5;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+body {
+  margin: 0;
+  background: transparent;
+}

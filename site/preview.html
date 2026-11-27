@@ -1,0 +1,18 @@
+<section class="stage is-preview" data-host aria-label="Live preview">
+  <div class="chat">
+    <div class="frame" data-frame>
+      <!-- host.js sets the address once it listens: the app speaks first, as soon as it loads -->
+      <iframe data-src="APP_URL" title="Live preview of the component"></iframe>
+      <noscript><p>The live preview needs JavaScript.</p></noscript>
+    </div>
+    <div data-chat-extra aria-live="polite"></div>
+  </div>
+  <aside class="wire">
+    <div class="wire-head">
+      <h2>Across the iframe border</h2>
+      <button type="button" data-replay>Run again</button>
+    </div>
+    <p class="ends" aria-hidden="true"><span>app</span><span>host</span></p>
+    <ol data-log></ol>
+  </aside>
+</section>

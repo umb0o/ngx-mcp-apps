@@ -1,5 +1,10 @@
 # ngx-mcp-apps
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/umb0o/ngx-mcp-apps/main/docs/demo.gif" width="420"
+    alt="An assistant answers three questions with small apps inside the chat: a packing list to tick, a sales chart, a table booking." />
+</p>
+
 > Unofficial community library. Not affiliated with or endorsed by Anthropic, OpenAI or the Model Context Protocol project.
 
 An [MCP App](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp) is a small web
@@ -8,6 +13,9 @@ an editor, instead of plain text. `ngx-mcp-apps` lets you write that page as a n
 the MCP Apps protocol with the host for you and exposes everything as signals: the connection status, the data of the
 tool call that opened the app, the host theme and the display mode. A second package, `ngx-mcp-apps-builder`, builds
 the application into the single HTML file that hosts expect.
+
+**Documentation, a live example and components to copy: [umb0o.github.io/ngx-mcp-apps](https://umb0o.github.io/ngx-mcp-apps/).**
+Coding agents: start from [llms.txt](https://umb0o.github.io/ngx-mcp-apps/llms.txt).
 
 - **Signals first.** Connection status, tool data, host theme and display mode are signals.
 - **Lightweight, no dependencies.** The view side of the protocol is implemented here: about 13 KB minified, under 5 KB gzipped, with no runtime dependencies.
@@ -132,10 +140,11 @@ Single file: public/app.html (212.4 kB)
 `public/app.html` is the whole app: every local script and stylesheet is inlined. This is the file your MCP server
 returns to the host.
 
-**No lazy loading.** One HTML file cannot fetch other chunks: use static imports only (no `loadComponent` /
-`loadChildren`, no `@defer` blocks, no dynamic `import()`). If the build would need a separate chunk it fails with an
-error that lists the files, instead of writing a file that breaks at runtime. Images and fonts are not inlined:
-embed them as `data:` URLs or load them from an absolute `https://` URL. More in the
+**Lazy loading is merged into the file.** One HTML file cannot fetch other chunks, so the builder puts lazy routes
+(`loadComponent` / `loadChildren`), `@defer` blocks and dynamic `import()` back into the file. The code works as
+written, but everything is loaded with the app: there is no saving. A web worker cannot be merged and fails the build.
+Fonts and images referenced by your CSS
+are embedded; an image named in a template (`<img src>`) is not: use a `data:` URL or an absolute `https://` URL. More in the
 [builder README](./projects/ngx-mcp-apps-builder/README.md).
 
 Two more things to know inside the host iframe:
@@ -198,7 +207,8 @@ note = this.mcp.pollServerTool('read_note', { guard: isNote }); // Signal<Note |
 opened = this.mcp.structuredContentAs(isNote); // Signal<Note | undefined>
 ```
 
-Invalid values are dropped and logged; the signal keeps the last valid one.
+With `pollServerTool`, an invalid value is dropped and logged, and the signal keeps the last valid one.
+`structuredContentAs` is `undefined` while the result of the tool call does not pass the guard.
 
 ## API
 
@@ -292,6 +302,10 @@ Each of these versions was checked with a new application that uses the library 
 both the first release of the major (18.0.0, 19.0.0, ...) and its latest one: a production build, then the built page
 opened in a browser.
 
+The check is repeated automatically on every change and once a week, with the latest release of each major: a new
+application, `ng add`, a component of Angular Material, the single-file build, then the page opened in a browser.
+Run it yourself with `npm run build && npm run test:compat`.
+
 - MCP Apps protocol `2026-01-26`. A different version announced by the host is logged, and the app keeps working.
 - Automated tests run the library against the official `AppBridge`. It has been used in Claude through a custom connector.
 
@@ -300,7 +314,8 @@ opened in a browser.
 - Not wrapped yet: tools provided by the app to the host, sampling, file download, reading server resources.
   They are reachable through `bridge.request(...)` and `bridge.onRequest(...)`.
 - Only the host context fields the library knows are validated; unknown fields are passed through as they are.
-- The single HTML file cannot use lazy loading (see [Build one HTML file](#4-build-one-html-file)).
+- The single HTML file loads everything at once: lazy chunks are merged into it, and web workers are not supported
+  (see [Build one HTML file](#4-build-one-html-file)).
 
 ## Packages in this repository
 
