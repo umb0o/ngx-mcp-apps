@@ -1,18 +1,29 @@
 <section class="stage is-preview" data-host aria-label="Live preview">
   <div class="chat">
+    <div class="stage-bar">
+      <span class="stage-title">Preview</span>
+      <button type="button" data-replay>Run again</button>
+    </div>
     <div class="frame" data-frame>
       <!-- host.js sets the address once it listens: the app speaks first, as soon as it loads -->
       <iframe data-src="APP_URL" title="Live preview of the component"></iframe>
       <noscript><p>The live preview needs JavaScript.</p></noscript>
     </div>
-    <div data-chat-extra aria-live="polite"></div>
+    <p class="context" data-context hidden aria-live="polite">
+      <span class="label">Added to the model context</span> <span data-context-text></span>
+    </p>
+    <div
+      class="conversation"
+      data-chat-extra
+      aria-live="polite"
+      tabindex="0"
+      role="region"
+      aria-label="Conversation"
+    ></div>
   </div>
-  <aside class="wire">
-    <div class="wire-head">
-      <h2>Across the iframe border</h2>
-      <button type="button" data-replay>Run again</button>
-    </div>
+  <details class="wire">
+    <summary>Messages between the app and the host</summary>
     <p class="ends" aria-hidden="true"><span>app</span><span>host</span></p>
-    <ol data-log></ol>
-  </aside>
+    <ol data-log tabindex="0" aria-label="Messages between the app and the host"></ol>
+  </details>
 </section>

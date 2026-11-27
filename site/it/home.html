@@ -1,0 +1,255 @@
+<div class="hero">
+  <div class="hero-copy">
+    <h1>La tua app, dentro la chat</h1>
+    <p class="lede">
+      Quando qualcuno chiede qualcosa a un assistente AI come Claude, la risposta può essere la tua
+      app: un grafico, una lista da spuntare, un modulo di prenotazione. Compare direttamente nella
+      conversazione, pronta da usare.
+    </p>
+    <p class="actions">
+      <a class="go" href="example.html">Guardane una vera in funzione</a>
+      <a class="go quiet" href="#developers">Per gli sviluppatori</a>
+    </p>
+  </div>
+
+  <div class="scene" data-scene>
+    <p class="sr-only">
+      Una dimostrazione animata con tre brevi storie. Qualcuno chiede com'è andato il fatturato in
+      questo trimestre, e l'assistente risponde con un grafico a barre di dati di esempio in cui il
+      mese migliore è evidenziato. Qualcuno chiede cosa mettere in valigia per Lisbona, e
+      l'assistente risponde con una lista in cui vengono spuntate due cose su quattro. Qualcuno
+      chiede di prenotare un tavolo per venerdì alle 20, e l'assistente risponde con una scelta di
+      orari; viene scelto le 20:00 e la prenotazione è confermata.
+    </p>
+    <div class="chatwin" aria-hidden="true">
+      <div class="chatwin-head"><span class="face"></span>Assistente</div>
+      <div class="chatwin-body" data-body>
+        <div class="story is-on">
+          <p class="ask on">Come sono andate le vendite in questo trimestre?</p>
+          <p class="say on">Settembre è stato finora il mese migliore.</p>
+          <div class="card chart on">
+            <p class="card-title">Vendite per mese <span class="sample">dati di esempio</span></p>
+            <div class="bars on">
+              <span class="bar" style="--h: 62%"><i></i><b>Apr</b></span>
+              <span class="bar" style="--h: 55%"><i></i><b>Mag</b></span>
+              <span class="bar" style="--h: 72%"><i></i><b>Giu</b></span>
+              <span class="bar" style="--h: 80%"><i></i><b>Lug</b></span>
+              <span class="bar" style="--h: 74%"><i></i><b>Ago</b></span>
+              <span class="bar hot" style="--h: 96%"><em>48k</em><i></i><b>Set</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="story">
+          <p class="ask on">Cosa metto in valigia per Lisbona?</p>
+          <p class="say on">Ecco una lista. Spunta le cose man mano che le metti in valigia.</p>
+          <div class="card pack on" data-packed="2">
+            <p class="card-title">Weekend a Lisbona</p>
+            <ul class="ticks">
+              <li class="on">Passaporto</li>
+              <li class="on">Caricatore del telefono</li>
+              <li>Scarpe comode</li>
+              <li>Crema solare</li>
+            </ul>
+            <div class="meter"><span></span></div>
+            <p class="card-note" data-count>2 di 4 pronti</p>
+          </div>
+        </div>
+
+        <div class="story">
+          <p class="ask on">Prenota un tavolo per venerdì alle 20</p>
+          <p class="say on">Questi orari sono liberi venerdì sera.</p>
+          <div class="card book on">
+            <p class="card-title">Un tavolo per due, venerdì</p>
+            <div class="slots">
+              <span>19:00</span>
+              <span>19:30</span>
+              <span class="picked">20:00</span>
+              <span>20:30</span>
+              <span>21:00</span>
+              <span>21:30</span>
+            </div>
+            <p class="booked on">Prenotato per venerdì alle 20:00</p>
+          </div>
+        </div>
+
+        <svg class="pointer" data-pointer viewBox="0 0 20 22" width="20" height="22">
+          <path d="M2 1.5v16.2l4.4-3.9 2.9 6.6 2.9-1.3-2.9-6.5 5.9-.3z" />
+        </svg>
+      </div>
+      <div class="composer">
+        <span class="typed" data-typed></span>
+        <span class="send"></span>
+      </div>
+    </div>
+    <div class="scene-controls" data-controls hidden>
+      <button type="button" class="toggle" data-toggle>Pausa</button>
+      <button type="button" data-pick aria-pressed="true">Grafico vendite</button>
+      <button type="button" data-pick aria-pressed="false">Lista valigia</button>
+      <button type="button" data-pick aria-pressed="false">Prenotazione tavolo</button>
+    </div>
+  </div>
+</div>
+
+<section class="uses" aria-labelledby="uses-title">
+  <h2 id="uses-title">App agentiche: la tua interfaccia nel ciclo dell'agente</h2>
+  <p class="uses-lede">
+    Un agente che sa solo scrivere testo si ferma alle parole. Con una MCP App agisce su qualcosa
+    che hai costruito tu, e anche la persona nella chat ci agisce: un'unica interfaccia, condivisa
+    da agente e utente, turno dopo turno.
+  </p>
+  <div class="uses-list">
+    <div>
+      <h3>L'agente la apre</h3>
+      <p>
+        L'agente decide quando un grafico, un modulo o una lista lo dicono meglio del testo, chiama
+        il tuo tool, e la tua app compare nella conversazione con i dati che ha scelto.
+      </p>
+    </div>
+    <div>
+      <h3>L'agente continua a lavorarci</h3>
+      <p>
+        Nei turni successivi aggiunge dati, evidenzia un valore, cambia la vista, attraverso i tool
+        del tuo server. L'app già a schermo si aggiorna: nessuna nuova finestra, nessun copia e
+        incolla.
+      </p>
+    </div>
+    <div>
+      <h3>L'utente indica, l'agente capisce</h3>
+      <p>
+        Un tocco nell'app arriva all'agente come contesto. "Perché questo è così alto?" si riferisce
+        al valore appena selezionato, senza doverlo descrivere.
+      </p>
+    </div>
+    <div>
+      <h3>I tuoi tool, le tue regole</h3>
+      <p>
+        L'agente agisce solo attraverso i tool che il tuo server MCP espone, e l'app controlla ogni
+        dato prima di mostrarlo. Decidi tu cosa può fare.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="dev" id="developers" aria-labelledby="dev-title">
+  <div class="dev-head">
+    <div>
+      <h2 id="dev-title">Per gli sviluppatori</h2>
+      <p>
+        Queste sono MCP Apps: piccole pagine web che un host di chat come Claude mostra quando il
+        modello chiama un tool. <code>ngx-mcp-apps</code> ti permette di scriverne una come una
+        normale applicazione Angular, e ne fa la build nel singolo file HTML che gli host si
+        aspettano.
+      </p>
+    </div>
+    <div class="install">
+      <pre><code>ng add ngx-mcp-apps-builder</code></pre>
+      <a class="go" href="start.html">Inizia</a>
+    </div>
+  </div>
+
+  <div class="facts">
+    <div>
+      <h3>Signal, non listener</h3>
+      <p>
+        La connessione, il risultato del tool, il tema dell'host e la modalità di visualizzazione
+        sono signal. Un template li legge come qualsiasi altro stato.
+      </p>
+    </div>
+    <div>
+      <h3>Circa 5 kB, nient'altro</h3>
+      <p>
+        Il lato app del protocollo è implementato nella libreria: meno di 5 kB compressi con gzip,
+        senza dipendenze a runtime.
+      </p>
+    </div>
+    <div>
+      <h3>Un solo file da <code>ng build</code></h3>
+      <p>
+        Il builder esegue l'application builder di Angular, poi incorpora script, stili, font e
+        immagini del CSS. Se qualcosa non può stare in un solo file, la build fallisce e dice cosa.
+      </p>
+    </div>
+    <div>
+      <h3>Da Angular 18 a 22</h3>
+      <p>
+        Ogni major è verificata con una nuova applicazione: installata, compilata, aperta in un
+        browser.
+      </p>
+    </div>
+  </div>
+
+  <div class="next">
+    <a href="components.html">
+      <strong>Componenti da copiare</strong>
+      Nove file che servono alla maggior parte delle app: stati del tool, un pulsante che chiama un
+      tool, il tema dell'host.
+    </a>
+    <a href="server.html">
+      <strong>Il lato server</strong>
+      Il server MCP più piccolo che apre l'app, in sessanta righe di Node.
+    </a>
+    <a href="agents.html">
+      <strong>Per gli agenti AI</strong>
+      Questa documentazione come testo semplice, e una skill che insegna a un agente a usare la
+      libreria.
+    </a>
+  </div>
+</section>
+
+<section class="faq" aria-labelledby="faq-title">
+  <h2 id="faq-title">Domande</h2>
+  <details>
+    <summary>Cos'è una MCP App?</summary>
+    <p>
+      Una piccola pagina web che un host di chat mostra dentro la conversazione quando il modello
+      chiama un tool di un server MCP. È definita dall'estensione MCP Apps del Model Context
+      Protocol: la pagina gira in un frame in sandbox e parla con l'host tramite messaggi.
+    </p>
+  </details>
+  <details>
+    <summary>Cosa fa ngx-mcp-apps?</summary>
+    <p>
+      Ti permette di scrivere quella pagina come una normale applicazione Angular. La libreria parla
+      il protocollo con l'host ed espone come signal la connessione, i dati del tool, il tema
+      dell'host e la modalità di visualizzazione. Il builder trasforma l'applicazione nel singolo
+      file HTML che gli host si aspettano.
+    </p>
+  </details>
+  <details>
+    <summary>Quali versioni di Angular sono supportate?</summary>
+    <p>
+      Angular 18, 19, 20, 21 e 22, per entrambi i pacchetti. Ogni versione viene verificata in
+      automatico con una nuova applicazione che usa Angular Material.
+    </p>
+  </details>
+  <details>
+    <summary>Con quali host funziona?</summary>
+    <p>
+      È stata provata in Claude: claude.ai sul web e l'app Claude per Android. La libreria segue la
+      specifica MCP Apps, quindi altri host che la implementano dovrebbero funzionare, ma non sono
+      stati provati.
+    </p>
+  </details>
+  <details>
+    <summary>L'app può usare il lazy loading?</summary>
+    <p>
+      Sì. Le route lazy, i blocchi <code>&#64;defer</code> e gli <code>import()</code> dinamici
+      vengono uniti dal builder nel file unico: funzionano, ma tutto viene caricato insieme all'app.
+      I web worker non sono supportati.
+    </p>
+  </details>
+  <details>
+    <summary>È un progetto ufficiale?</summary>
+    <p>
+      No. È una libreria non ufficiale della community con licenza MIT, non affiliata né approvata
+      da Anthropic, OpenAI o dal progetto Model Context Protocol.
+    </p>
+  </details>
+</section>
+
+<p class="disclaimer">
+  Versione
+  <!-- version -->. Licenza MIT. Libreria non ufficiale della community, non affiliata né approvata
+  da Anthropic, OpenAI o dal progetto Model Context Protocol.
+</p>

@@ -1,0 +1,42 @@
+{
+  "one-file-app": {
+    "title": "Un'intera MCP App in un solo file",
+    "description": "Un componente e tre righe di bootstrap: questo file è l'intera applicazione. Aspetta il risultato del tool e lo controlla, segue il tema dell'host, chiama un tool del server da un form, segue il server mentre cambia, passa a schermo intero e dice al modello cosa ha fatto l'utente. `ng build` lo trasforma in un unico file HTML. È scritto per Angular 22: signal forms, `linkedSignal`, `@let`, `animate.enter`, niente zone.js. Parti da qui quando l'app è piccola; dividila nei pezzi qui sotto quando cresce."
+  },
+  "mcp-call-tool": {
+    "title": "Pulsante che chiama un tool del server",
+    "description": "Mettilo su un `<button>`: un clic chiama un tool del tuo server MCP attraverso l'host. Mentre la chiamata è in corso il pulsante è disabilitato e segnato come occupato, così un secondo clic non può avviare una seconda chiamata."
+  },
+  "mcp-fullscreen-button": {
+    "title": "Pulsante schermo intero",
+    "description": "Chiede all'host di mostrare l'app a schermo intero, e di tornare indietro. Non mostra niente quando l'host non offre lo schermo intero (molti host su mobile non lo offrono), quindi puoi lasciarlo nel template."
+  },
+  "mcp-host-link": {
+    "title": "Link aperto dall'host",
+    "description": "Dentro l'iframe dell'host un link normale di solito viene bloccato dalla sandbox. Questa direttiva chiede invece all'host di aprire il link. Fuori da un host, o se l'host rifiuta, il link si apre come un link normale in una nuova scheda."
+  },
+  "mcp-live-value": {
+    "title": "Seguire lo stato del server",
+    "description": "Il risultato di un tool arriva all'app una sola volta. Per mostrare qualcosa che cambia dopo, per esempio perché il modello ha chiamato un altro tool, rileggilo dal tuo server ancora e ancora. Questo componente segue un contatore: chiama `read_counter` ogni secondo e controlla ogni risposta con una guard. Copialo, poi cambia il nome del tool, la guard e il template."
+  },
+  "mcp-standalone-notice": {
+    "title": "Avviso standalone",
+    "description": "Una riga mostrata solo quando l'app gira fuori da un host, per esempio con `ng serve`. Lì non ci sono dati del tool e le chiamate all'host falliscono: dirlo ti risparmia un minuto di perplessità mentre sviluppi."
+  },
+  "mcp-status": {
+    "title": "Stato della connessione",
+    "description": "Un piccolo badge che dice se l'app sta parlando con un host. Utile in un header mentre sviluppi: fuori da un host (`ng serve`, una scheda del browser) mostra \"Standalone\"."
+  },
+  "mcp-tell-model": {
+    "title": "Parlare al modello",
+    "description": "Una casella di testo con i due modi in cui un'app può rispondere. \"Add to context\" è silenzioso: il modello legge il testo al suo turno successivo. \"Send as message\" pubblica un messaggio in chat a nome dell'utente; gli host possono chiedere all'utente di confermarlo o rifiutarlo (succede spesso su mobile), e allora il componente lo dice invece di fallire."
+  },
+  "mcp-theme": {
+    "title": "Tema dell'host",
+    "description": "Segue il tema chiaro o scuro dell'host. Scrive `data-theme` sull'elemento `<html>`, così il tuo foglio di stile può reagire con `:root[data-theme='dark'] { ... }`, e lì imposta anche `color-scheme`. Questa seconda parte è importante: quando lo schema di colori della tua pagina è diverso da quello dell'host, il browser dipinge il riquadro di bianco invece di lasciarlo trasparente. Copia anche le variabili di stile che l'host invia (colori, font) sull'elemento `<html>`, così il tuo CSS può usarle con un fallback: `color: var(--color-text-primary, #16203a)`. Lascia trasparente lo sfondo della pagina: lo disegna l'host."
+  },
+  "mcp-tool-state": {
+    "title": "Stati del risultato del tool",
+    "description": "Avvolge la parte dell'app che ha bisogno del risultato del tool. Mostra il tuo contenuto solo quando un risultato è arrivato; prima di allora, e quando la chiamata al tool viene annullata o fallisce, mostra invece un breve messaggio. L'app è sullo schermo prima che il risultato esista, perché il modello prima invia in streaming gli argomenti del tool: questo componente copre quel momento."
+  }
+}

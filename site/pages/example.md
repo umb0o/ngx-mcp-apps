@@ -60,26 +60,3 @@ opens and at every reading of the server. The tools it relies on (`show_chart`, 
 [The server side](server.html). The file alone: [`chart.ts`](example/chart.ts).
 
 <!-- source: projects/chart/src/main.ts -->
-
-## The nine pieces in one app
-
-A second application, a packing list, is built from the nine [components](components.html) you can copy: the
-connection badge, the states of the tool call, a button that calls a tool, a value that follows the server, the
-theme, fullscreen, a note for the model, a link opened by the host, a notice outside a host. It runs here against
-the same kind of host.
-
-<!-- stage -->
-
-- **Add an item.** The button calls the server tool `add_item` through the host. The list comes back in the
-  result, and the count of saved changes follows on its own within a second.
-- **Write a note for the model.** "Add to context" stays silent; "Send as message" appears in the chat.
-- **Say next.** "Add what I need for the beach" makes the model call `add_items`, and the list on screen grows by
-  itself. "Did I leave you a note?" answers with what "Add to context" sent.
-
-Open this [application alone](example/app.html) to see its standalone state.
-
-<!-- source: projects/example/src/app/app.ts -->
-
-Its configuration:
-
-<!-- source: projects/example/src/main.ts -->

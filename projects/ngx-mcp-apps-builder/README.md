@@ -1,11 +1,15 @@
 # ngx-mcp-apps-builder
 
-An Angular CLI builder for [MCP Apps](https://github.com/umb0o/ngx-mcp-apps): user interfaces that run
-inside an AI chat host and are delivered as **one self-contained HTML file**.
+An Angular CLI builder for [MCP Apps](https://umb0o.github.io/ngx-mcp-apps/): it builds an Angular application
+into **one self-contained HTML file**, the form a chat host loads.
+
+[![npm](https://img.shields.io/npm/v/ngx-mcp-apps-builder)](https://www.npmjs.com/package/ngx-mcp-apps-builder)
+[![MIT licence](https://img.shields.io/npm/l/ngx-mcp-apps-builder)](https://github.com/umb0o/ngx-mcp-apps/blob/main/LICENSE)
 
 It runs Angular's official application builder (`@angular/build:application`), with the same options,
 and then writes a single HTML file in which every local script and stylesheet of the built `index.html`
-is inlined.
+is inlined. Documentation of the whole project, with live examples:
+[umb0o.github.io/ngx-mcp-apps](https://umb0o.github.io/ngx-mcp-apps/).
 
 ## Install
 
@@ -16,7 +20,7 @@ ng add ngx-mcp-apps-builder
 It installs the builder as a dev dependency, adds the [ngx-mcp-apps](https://www.npmjs.com/package/ngx-mcp-apps)
 library and switches the `build` target of your application to this builder.
 
-| Option           |                                                                              |
+| Option           | What it does                                                                 |
 | ---------------- | ---------------------------------------------------------------------------- |
 | `--project`      | The application to set up. Needed only when the workspace has more than one. |
 | `--single-file`  | Path of the HTML file. Default: `dist/<project>.html`.                       |
@@ -28,27 +32,7 @@ Or by hand:
 npm install -D ngx-mcp-apps-builder
 ```
 
-## Compatibility
-
-Angular 18, 19, 20, 21 and 22, the same versions as the `ngx-mcp-apps` library
-(`@angular/build` `>=18.0.0 <23.0.0`, `@angular-devkit/architect` `>=0.1800.0 <0.2300.0`).
-
-The builder needs the `@angular/build` package. An application created with Angular 20 or later already
-has it; in an Angular 18 or 19 application it is installed together with `@angular-devkit/build-angular`.
-
-In an Angular 18 or 19 application, name `@angular/build` with your major in the install command.
-Otherwise npm tries to add the latest `@angular/build` for the peer dependency and stops with
-`ERESOLVE` (seen with npm 12 on a new Angular 18 application):
-
-```bash
-npm install -D @angular/build@18 ngx-mcp-apps-builder
-```
-
-The list of accepted options is the one of the Angular 22 application builder. An option that was added
-after your Angular version (for example `outputMode` on Angular 18) passes the validation, but your
-version of `@angular/build` does not know it.
-
-## Use
+## Usage
 
 `ng add` writes this for you. By hand: in `angular.json`, replace the builder of the `build` target and add the
 `singleFile` option:
@@ -98,7 +82,9 @@ images of the first screen twice. The rest of `optimization` is used as you wrot
 
 The normal build output in `outputPath` is still written.
 
-## What is inlined
+## What gets merged and what fails
+
+### Scripts, styles, fonts and images
 
 After each successful build the builder reads the built `index.html` and:
 
@@ -120,31 +106,7 @@ Single file: public/app.html (2121.5 kB), with 40 font or image files embedded a
 If a stylesheet references a local file that is not in the build output, the build **fails** and names
 the file and the stylesheet.
 
-### Size
-
-Base64 makes an embedded file about one third larger, and every file that the CSS references is
-embedded, whether the page uses it or not. A font package that lists many subsets and two formats per
-font weighs a lot: an application with Angular Material, `material-icons` and two weights of
-`@fontsource/roboto` went from 1.0 MB to 2.1 MB, for 40 font and image files of 0.8 MB. Import only
-what you need (for example `@fontsource/roboto/latin-400.css` instead of `400.css`).
-
-## Warnings
-
-The build still succeeds, and the log lists what the single file does not contain:
-
-- **Remote URLs** that the document loads: `<script src="https://…">`, `<link href="https://…">`,
-  `url(https://…)` in CSS (also the font files that Angular's font inlining leaves on
-  `fonts.gstatic.com`). They are not downloaded and not removed. Inside an MCP host they load only if
-  the MCP server declares their domains in the CSP of the UI resource (`_meta.ui.csp.resourceDomains`);
-  the warning ends with the list of domains.
-- **Files of the build output that the application code names**, such as `logo.png` for
-  `<img src="logo.png">` in a template with the file in `public/`. They are not embedded.
-- **Local references of the static `index.html`** that are not inlined: `<img src>`, `<video>`,
-  `<link rel="manifest">` and the like.
-
-## Limitations
-
-### Lazy loading is merged, web workers are not supported
+### Lazy loading is merged
 
 One HTML file cannot fetch other chunks, and the Angular application builder always splits the code: a lazy
 route (`loadComponent` / `loadChildren`), a `@defer` block or a dynamic `import()` becomes a separate file, and
@@ -163,6 +125,52 @@ whole application is in the file and is loaded at once. If the file becomes too 
 A **web worker** (`new Worker(new URL(…, import.meta.url))`) is a separate script by nature and cannot be merged:
 the build fails and names the file. Run that code in the page.
 
+### Size
+
+Base64 makes an embedded file about one third larger, and every file that the CSS references is
+embedded, whether the page uses it or not. A font package that lists many subsets and two formats per
+font weighs a lot: an application with Angular Material, `material-icons` and two weights of
+`@fontsource/roboto` went from 1.0 MB to 2.1 MB, for 40 font and image files of 0.8 MB. Import only
+what you need (for example `@fontsource/roboto/latin-400.css` instead of `400.css`).
+
+### Warnings
+
+The build still succeeds, and the log lists what the single file does not contain:
+
+- **Remote URLs** that the document loads: `<script src="https://…">`, `<link href="https://…">`,
+  `url(https://…)` in CSS (also the font files that Angular's font inlining leaves on
+  `fonts.gstatic.com`). They are not downloaded and not removed. Inside an MCP host they load only if
+  the MCP server declares their domains in the CSP of the UI resource (`_meta.ui.csp.resourceDomains`);
+  the warning ends with the list of domains.
+- **Files of the build output that the application code names**, such as `logo.png` for
+  `<img src="logo.png">` in a template with the file in `public/`. They are not embedded.
+- **Local references of the static `index.html`** that are not inlined: `<img src>`, `<video>`,
+  `<link rel="manifest">` and the like.
+
+## Compatibility
+
+Angular 18, 19, 20, 21 and 22, the same versions as the `ngx-mcp-apps` library
+(`@angular/build` `>=18.0.0 <23.0.0`, `@angular-devkit/architect` `>=0.1800.0 <0.2300.0`).
+
+The builder needs the `@angular/build` package. An application created with Angular 20 or later already
+has it; in an Angular 18 or 19 application it is installed together with `@angular-devkit/build-angular`.
+
+In an Angular 18 or 19 application, name `@angular/build` with your major in the install command.
+Otherwise npm tries to add the latest `@angular/build` for the peer dependency and stops with
+`ERESOLVE` (seen with npm 12 on a new Angular 18 application):
+
+```bash
+npm install -D @angular/build@18 ngx-mcp-apps-builder
+```
+
+The list of accepted options is the one of the Angular 22 application builder. An option that was added
+after your Angular version (for example `outputMode` on Angular 18) passes the validation, but your
+version of `@angular/build` does not know it.
+
+**Hosts.** Tested with Claude: claude.ai on the web and the Claude app for Android. The library follows the MCP Apps specification (protocol 2026-01-26), so other hosts that implement it should work, but they have not been tried.
+
+## Limitations
+
 ### Images of templates are not embedded
 
 Only `url(…)` in CSS is embedded. A file referenced from a template or from code (`<img src="logo.png">`,
@@ -177,6 +185,20 @@ URL, or load it from an `https://` URL that the MCP server declares.
   that file to the build output either).
 - Inline `style="…"` attributes of `index.html` are not processed.
 - A remote stylesheet or script is never downloaded into the file.
+
+## Using the functions directly
+
+The builder is made of plain functions, exported from the package, for a build script of your own:
+
+- `inlineHtml(html, { readFile, readBinaryFile?, outputFiles?, merged? })` returns the single document, with the
+  lists of what was inlined, embedded, left remote or only warned about. It throws `SingleFileError` when the
+  JavaScript still needs a file that is not in the document, or the CSS names a missing local file.
+- `inlineCssUrls(css, cssPath, options)` embeds the `url(…)` of one stylesheet as `data:` URLs.
+- `findSplit(html, { readFile, outputFiles })` tells which JavaScript files the document needs without loading
+  them directly, and of which kind: lazy (`dynamic`), `shared`, or `worker`.
+- `bundleModules(directory, entries, minify)` bundles the module scripts and the chunks they load into one
+  module, with esbuild; pass the result to `inlineHtml` as `merged`.
+- `writeSingleFile(options, context)` does all of it on a finished build, as the builder does.
 
 ## License
 

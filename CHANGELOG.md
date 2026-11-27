@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [Unreleased]
+
+- The documentation site is in English and Italian (`/it/`), with a language switch, `hreflang`, a sitemap,
+  canonical addresses, social previews, structured data (schema.org) and a questions section on the home.
+
+Documentation only: no change to the packages.
+
+### Changed
+
+- **A shorter README**, on the usual pattern: what it is, badges, the quick start, the packages, links to the
+  documentation, development. The detailed sections (API, configuration, security, compatibility, limits) moved to
+  the documentation site, where they are now kept.
+- The README of the builder starts with install and usage, and ends with the functions it exports.
+- **Site:** every page ends with links to the previous and the next page, long pages list their sections ("On this
+  page"), and the text is set in Geist and Geist Mono.
+
 ## [0.3.0] - 2026-11-27
 
 ### Added
