@@ -24,6 +24,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          # The whole history: the sitemap dates each page by the last commit of its sources
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
