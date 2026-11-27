@@ -59,6 +59,8 @@ cpSync('dist/routing.html', `${out}/example/routing.html`);
 cpSync('dist/security.html', `${out}/example/security.html`);
 cpSync('docs/assets', `${out}/assets`, { recursive: true });
 cpSync('docs/skill', `${out}/skill`, { recursive: true });
+// Files served as they are at the root of the site (the Search Console verification file)
+cpSync('docs/public', out, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
 
 // A browser keeps a stylesheet or a script for a while: the address of each one carries a hash of its content, so a
