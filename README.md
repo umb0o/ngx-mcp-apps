@@ -2,35 +2,44 @@
 
 > Unofficial community library. Not affiliated with or endorsed by Anthropic, OpenAI or the Model Context Protocol project.
 
-Angular runtime for [MCP Apps](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp), exposed as signals.
-Write an Angular app, return it from an MCP server, and it runs as an interactive UI inside Claude and other MCP hosts.
+An [MCP App](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp) is a small web
+page that an AI chat host, such as Claude, shows inside the conversation when the model calls a tool: a form, a chart,
+an editor, instead of plain text. `ngx-mcp-apps` lets you write that page as a normal Angular application. It speaks
+the MCP Apps protocol with the host for you and exposes everything as signals: the connection status, the data of the
+tool call that opened the app, the host theme and the display mode. A second package, `ngx-mcp-apps-builder`, builds
+the application into the single HTML file that hosts expect.
 
 - **Signals first.** Connection status, tool data, host theme and display mode are signals.
-- **Lightweight, no dependencies.** The view side of the protocol is implemented here: about 13 KB minified, under 5 KB gzipped.
+- **Lightweight, no dependencies.** The view side of the protocol is implemented here: about 13 KB minified, under 5 KB gzipped, with no runtime dependencies.
 - **Checked at runtime.** Every message from the host goes through small hand-written type guards.
 - **Tested against the official host.** The test suite connects the library to `AppBridge` from `@modelcontextprotocol/ext-apps`.
 
 ## Contents
 
-- [Install](#install)
 - [Quick start](#quick-start)
-- [The server side](#the-server-side)
-- [Building a single HTML file](#building-a-single-html-file)
+- [How it fits together](#how-it-fits-together)
 - [Following the model while the app is open](#following-the-model-while-the-app-is-open)
 - [Checking your own data](#checking-your-own-data)
 - [API](#api)
+- [Configuration](#configuration)
 - [Security](#security)
-- [Compatibility and limits](#compatibility-and-limits)
+- [Compatibility](#compatibility)
+- [Limits](#limits)
+- [Packages in this repository](#packages-in-this-repository)
 
-## Install
+## Quick start
+
+You need an Angular application (Angular 18 to 22, see [Compatibility](#compatibility)). A new one is fine:
+`ng new my-app`.
+
+### 1. Install
 
 ```bash
 npm install ngx-mcp-apps
+npm install -D ngx-mcp-apps-builder
 ```
 
-Requires Angular 22.
-
-## Quick start
+### 2. Configure
 
 ```ts
 // app.config.ts
@@ -41,6 +50,8 @@ export const appConfig: ApplicationConfig = {
   providers: [provideMcpApp({ name: 'my-app', version: '1.0.0' })],
 };
 ```
+
+### 3. Use `McpApp` in a component
 
 ```ts
 // app.ts
@@ -72,23 +83,70 @@ export class App {
 The connection starts on its own when `McpApp` is first injected. Outside a host (`ng serve`, a plain browser tab)
 `status()` becomes `standalone`, so the same app can be developed as a normal page.
 
-## The server side
+### 4. Build one HTML file
 
-This is a front-end library: the server is out of scope and up to you. The app only needs an MCP server that,
-as the MCP Apps specification describes, serves the built HTML as a `ui://` resource and links a tool to it with
-`_meta.ui.resourceUri`. The `structuredContent` of that tool's result is what `mcp.structuredContent()` returns.
+Hosts load the app from one HTML resource inside a sandboxed iframe, so the build must not need other files.
+In `angular.json`, replace the builder of the `build` target and add the `singleFile` option:
 
-Hosts may cache the resource: put a hash of the build in the URI (`ui://my-app/app-<hash>.html`) so a new build is always picked up.
+```json
+{
+  "projects": {
+    "my-app": {
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.app.json",
+            "styles": ["src/styles.css"],
+            "singleFile": "public/app.html"
+          }
+        }
+      }
+    }
+  }
+}
+```
 
-## Building a single HTML file
+Keep the other options you already have: the builder runs Angular's official application builder with the same
+options, then writes the single file.
 
-Hosts load the app from one HTML resource inside a sandboxed iframe, so the build must not need other files:
+```bash
+ng build
+```
 
-- inline the JS and CSS of `dist/<app>/browser` into `index.html` after `ng build` (a short Node script is enough: replace
-  `<script src>` and `<link rel="stylesheet">` with their contents, and escape `</script` inside the JS);
-- remove `<base href>` and avoid lazy-loaded routes (`loadComponent`), which create separate chunks;
+```text
+Single file: public/app.html (212.4 kB)
+```
+
+`public/app.html` is the whole app: every local script and stylesheet is inlined. This is the file your MCP server
+returns to the host.
+
+**No lazy loading.** One HTML file cannot fetch other chunks: use static imports only (no `loadComponent` /
+`loadChildren`, no `@defer` blocks, no dynamic `import()`). If the build would need a separate chunk it fails with an
+error that lists the files, instead of writing a file that breaks at runtime. Images and fonts are not inlined:
+embed them as `data:` URLs or load them from an absolute `https://` URL. More in the
+[builder README](./projects/ngx-mcp-apps-builder/README.md).
+
+Two more things to know inside the host iframe:
+
 - if you need a router, use `withHashLocation()`: the iframe URL is not yours;
 - `localStorage` may be unavailable in the sandbox: wrap it in `try/catch` and keep real state on your server.
+
+## How it fits together
+
+1. Your MCP server exposes a tool and, as the MCP Apps specification describes, serves the built HTML file as a
+   `ui://` resource linked to that tool with `_meta.ui.resourceUri`.
+2. When the model calls the tool, the host loads that HTML in a sandboxed iframe inside the conversation.
+3. `McpApp` does the handshake with the host over `postMessage` and receives the tool arguments and the tool result:
+   the `structuredContent` of that result is what `mcp.structuredContent()` returns.
+4. From then on the app can call tools of your server, add context for the model and ask for another display mode.
+
+The server side is out of scope of this project: any MCP server that follows the MCP Apps specification works, and how
+you write it is up to you.
+
+Hosts may cache the resource: put a hash of the build in the URI (`ui://my-app/app-<hash>.html`) so a new build is
+always picked up.
 
 ## Following the model while the app is open
 
@@ -134,23 +192,12 @@ Invalid values are dropped and logged; the signal keeps the last valid one.
 
 ## API
 
-### `provideMcpApp(config)`
-
-| Option            | Default       | Meaning                                                      |
-| ----------------- | ------------- | ------------------------------------------------------------ |
-| `name`, `version` | required      | Sent to the host during the handshake                        |
-| `autoResize`      | `true`        | Tell the host the content size so the iframe fits it         |
-| `connectTimeout`  | `4000`        | Ms to wait for the host before going `standalone`            |
-| `requestTimeout`  | `60000`       | Ms to wait for an answer to a request                        |
-| `log`             | `false`       | Keep the last 50 protocol events in `events` (for debugging) |
-| `allowedOrigins`  | any           | Talk only to a parent window with one of these origins       |
-| `port`            | parent window | Custom transport, mainly for tests                           |
-
 ### `McpApp` signals
 
 | Signal                                                  | Meaning                                                                     |
 | ------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `status`, `connected`                                   | `connecting`, `connected` or `standalone`                                   |
+| `status`                                                | `connecting`, `connected` or `standalone`                                   |
+| `connected`                                             | `true` once the handshake with the host succeeded                           |
 | `toolInput`, `toolInputPartial`                         | Arguments of the tool call that opened the app (final, and while streaming) |
 | `toolResult`, `structuredContent`                       | Result of that tool call                                                    |
 | `toolCancelled`                                         | The host cancelled the tool call                                            |
@@ -169,13 +216,14 @@ Invalid values are dropped and logged; the signal keeps the last valid one.
 | `updateModelContext(text, structuredContent?)`                | Add context for the model's next turn, without a chat message              |
 | `sendMessage(text)`                                           | Post a user message; resolves `false` if the host refuses                  |
 | `requestDisplayMode(mode)`, `toggleFullscreen()`              | Ask the host for another display mode; resolves with the mode actually set |
-| `openLink(url)`                                               | Ask the host to open a link                                                |
+| `openLink(url)`                                               | Ask the host to open a link; resolves `false` if the host refuses          |
 | `requestTeardown()`                                           | Ask the host to close the app                                              |
 | `bridge`                                                      | The underlying `McpBridge`, for protocol methods not wrapped here          |
 
-Methods that talk to the host reject with an error when the app is not connected.
+The methods that return a promise reject with an error when the app is not connected. `requestTeardown()` does
+nothing in that case, and `bridge` is `undefined` when the app runs outside a host.
 
-### Without Angular
+### Lower-level API
 
 `McpBridge`, `parentWindowPort()`, the `Methods` constants and the guards are plain TypeScript and are exported too:
 
@@ -186,6 +234,20 @@ bridge.onNotification(Methods.toolResult, (params) => {
 });
 const { hostContext } = await bridge.connect();
 ```
+
+## Configuration
+
+Options of `provideMcpApp(config)`:
+
+| Option            | Default       | Meaning                                                      |
+| ----------------- | ------------- | ------------------------------------------------------------ |
+| `name`, `version` | required      | Sent to the host during the handshake                        |
+| `autoResize`      | `true`        | Tell the host the content size so the iframe fits it         |
+| `connectTimeout`  | `4000`        | Ms to wait for the host before going `standalone`            |
+| `requestTimeout`  | `60000`       | Ms to wait for an answer to a request                        |
+| `log`             | `false`       | Keep the last 50 protocol events in `events` (for debugging) |
+| `allowedOrigins`  | any           | Talk only to a parent window with one of these origins       |
+| `port`            | parent window | Custom transport, mainly for tests                           |
 
 ## Security
 
@@ -207,13 +269,35 @@ What is up to you:
 - **Protect your MCP server.** An unauthenticated server lets anyone with the URL call its tools.
 - `log: true` stores host and server data in memory to show it: use it while debugging.
 
-## Compatibility and limits
+## Compatibility
+
+Both packages support the same Angular versions.
+
+| Package                | Angular            | Peer dependencies                                                                       |
+| ---------------------- | ------------------ | --------------------------------------------------------------------------------------- |
+| `ngx-mcp-apps`         | 18, 19, 20, 21, 22 | `@angular/core` `>=18.0.0 <23.0.0`                                                      |
+| `ngx-mcp-apps-builder` | 18, 19, 20, 21, 22 | `@angular/build` `>=18.0.0 <23.0.0`, `@angular-devkit/architect` `>=0.1800.0 <0.2300.0` |
+
+Each of these versions was checked with a new application that uses the library and is built by the builder, with
+both the first release of the major (18.0.0, 19.0.0, ...) and its latest one: a production build, then the built page
+opened in a browser.
 
 - MCP Apps protocol `2026-01-26`. A different version announced by the host is logged, and the app keeps working.
 - Automated tests run the library against the official `AppBridge`. It has been used in Claude through a custom connector.
+
+## Limits
+
 - Not wrapped yet: tools provided by the app to the host, sampling, file download, reading server resources.
   They are reachable through `bridge.request(...)` and `bridge.onRequest(...)`.
 - Only the host context fields the library knows are validated; unknown fields are passed through as they are.
+- The single HTML file cannot use lazy loading (see [Build one HTML file](#4-build-one-html-file)).
+
+## Packages in this repository
+
+| Package                                                   | What it is                                                   |
+| --------------------------------------------------------- | ------------------------------------------------------------ |
+| [`ngx-mcp-apps`](./projects/ngx-mcp-apps)                 | The runtime library: `McpApp`, `provideMcpApp`, `McpBridge`  |
+| [`ngx-mcp-apps-builder`](./projects/ngx-mcp-apps-builder) | The Angular CLI builder that writes the app as one HTML file |
 
 ## Changelog
 

@@ -1,0 +1,10 @@
+{
+  "$schema": "../../node_modules/@angular-devkit/architect/src/builders-schema.json",
+  "builders": {
+    "application": {
+      "implementation": "./application/index",
+      "schema": "./application/schema.json",
+      "description": "Build an application, optionally as one self-contained HTML file for MCP Apps."
+    }
+  }
+}

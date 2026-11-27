@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "cli": {
+    "analytics": false,
+    "cache": {
+      "enabled": false
+    }
+  },
+  "projects": {
+    "fixture": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.json",
+            "styles": ["src/styles.css"],
+            "assets": [{ "glob": "**/*", "input": "public" }],
+            "outputPath": "dist/plain"
+          },
+          "configurations": {
+            "single": {
+              "outputPath": "dist/app",
+              "singleFile": "dist/app.html"
+            },
+            "lazy": {
+              "browser": "src/main.lazy.ts",
+              "outputPath": "dist/lazy",
+              "singleFile": "dist/lazy.html"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,30 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [0.2.0] - 2026-11-27
+
+### Added
+
+- **`ngx-mcp-apps-builder`**, a new package: an Angular CLI builder (`ngx-mcp-apps-builder:application`) that runs
+  Angular's official application builder and, with the `singleFile` option, writes the app as one self-contained
+  HTML file. The build fails if the app needs lazy-loaded chunks.
+  - Fonts and images that the CSS references with `url(...)` are embedded as `data:` URLs: global styles, `<style>`
+    elements of `index.html` and component styles. A referenced file that is missing from the build output fails the build.
+  - Critical CSS inlining is turned off when `singleFile` is set, so that those files are embedded once.
+  - Warnings list what the single file does not contain: remote URLs (they need the domains declared in the CSP of the
+    UI resource), files that the application code names (for example an `<img src>` of a template) and local
+    references of the static `index.html`.
+  - The error for extra JavaScript files tells dynamic imports (lazy loading), statically imported shared chunks and
+    web worker scripts apart.
+
+### Changed
+
+- **Wider Angular support.** The library now works with Angular 18, 19, 20, 21 and 22
+  (`@angular/core` `>=18.0.0 <23.0.0`); it required Angular 22.3 before. The builder supports the same versions
+  (`@angular/build` `>=18.0.0 <23.0.0`, `@angular-devkit/architect` `>=0.1800.0 <0.2300.0`). Each major was checked
+  with a new application: a production build with the builder, then the page opened in a browser.
+- README rewritten around a quick start, with a compatibility table for both packages.
+
 ## [0.1.2] - 2026-11-26
 
 ### Changed

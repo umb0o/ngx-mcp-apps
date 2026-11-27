@@ -1,15 +1,18 @@
-# Releases happen only through pull requests: when a pull request from dev is merged into main and the version in
-# projects/ngx-mcp-apps/package.json is not on npm yet, this workflow builds the library and STAGES it on npm.
+# Releases happen only through pull requests: when a pull request from dev is merged into main, every package of
+# this repository whose version is not on npm yet is built and STAGED on npm.
 # A staged version is not public: it becomes public only when the owner approves it on npmjs.com.
 #
+# Packages: ngx-mcp-apps (projects/ngx-mcp-apps) and ngx-mcp-apps-builder (projects/ngx-mcp-apps-builder).
+#
 # It uses npm Trusted Publishing (OIDC): there is no npm token, here or in the repository secrets.
-# npm trusts this exact workflow file in this exact repository, as configured once on npmjs.com:
+# npm trusts this exact workflow file in this exact repository, as configured once per package on npmjs.com:
 #   package Settings -> Trusted publishing -> GitHub Actions
 #   Organization or user: umb0o   Repository: ngx-mcp-apps   Workflow filename: publish.yml
 #   ("npm publish" left unchecked: only staged publishing is allowed)
+# A package that is not on npm at all cannot be configured there: its first version is published by hand, once.
 #
-# To release: on dev, set the version in projects/ngx-mcp-apps/package.json and add the CHANGELOG entry;
-# open a pull request into main and merge it; then approve the staged version on npmjs.com.
+# To release: on dev, set the version in the package.json of the package and add the CHANGELOG entry;
+# the release pull request into main is opened automatically; merge it; then approve the staged version on npmjs.com.
 name: Release to npm
 
 on:
@@ -35,29 +38,36 @@ jobs:
       # Staged publishing needs a recent npm
       - run: npm install -g npm@latest
 
-      - name: Is this version already on npm?
-        id: version
+      - name: Which packages have a new version?
+        id: plan
         run: |
-          VERSION=$(node -p "require('./projects/ngx-mcp-apps/package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if npm view "ngx-mcp-apps@$VERSION" version >/dev/null 2>&1; then
-            echo "Version $VERSION is already on npm: nothing to release."
-            echo "release=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Version $VERSION is new: it will be staged."
-            echo "release=true" >> "$GITHUB_OUTPUT"
-          fi
+          RELEASE=""
+          for PACKAGE in ngx-mcp-apps ngx-mcp-apps-builder; do
+            VERSION=$(node -p "require('./projects/$PACKAGE/package.json').version")
+            if ! npm view "$PACKAGE" name >/dev/null 2>&1; then
+              echo "::notice::$PACKAGE is not on npm yet: publish its first version by hand, then configure trusted publishing."
+            elif npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
+              echo "$PACKAGE $VERSION is already on npm."
+            else
+              echo "$PACKAGE $VERSION is new: it will be staged."
+              RELEASE="$RELEASE $PACKAGE"
+            fi
+          done
+          echo "packages=$RELEASE" >> "$GITHUB_OUTPUT"
 
-      - if: steps.version.outputs.release == 'true'
+      - if: steps.plan.outputs.packages != ''
         run: npm ci
-      - if: steps.version.outputs.release == 'true'
+      - if: steps.plan.outputs.packages != ''
         run: npm run format:check
-      - if: steps.version.outputs.release == 'true'
+      - if: steps.plan.outputs.packages != ''
         run: npm test
-      - if: steps.version.outputs.release == 'true'
+      - if: steps.plan.outputs.packages != ''
         run: npm run build
 
-      # Staged, not public: approve it on npmjs.com to make it public. OIDC: no token needed.
-      - if: steps.version.outputs.release == 'true'
-        run: npm stage publish --access public --registry https://registry.npmjs.org/ --loglevel http
-        working-directory: dist/ngx-mcp-apps
+      # Staged, not public: approve on npmjs.com to make it public. OIDC: no token needed.
+      - name: Stage the new versions
+        if: steps.plan.outputs.packages != ''
+        run: |
+          for PACKAGE in ${{ steps.plan.outputs.packages }}; do
+            (cd "dist/$PACKAGE" && npm stage publish --access public --registry https://registry.npmjs.org/ --loglevel http)
+          done
