@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [0.2.1] - 2026-11-27
+
+### Added
+
+- **`ng add ngx-mcp-apps-builder`**: one command installs the builder and the library and switches the `build`
+  target of the application to the builder, with the `singleFile` option (`dist/<project>.html` by default).
+  Options: `--project`, `--single-file`, `--skip-library`.
+
+The library itself is unchanged: it is released with the same version as the builder.
+
 ## [0.2.0] - 2026-11-27
 
 ### Added
