@@ -1,7 +1,8 @@
 // Builds the documentation site into dist/site: static HTML for people, and the same content as plain text
 // for coding agents (llms.txt, llms-full.txt, every page as Markdown, the components as raw files, a skill).
 //
-// The pages are Markdown files of site/pages (English) and site/pages/<lang> (translations); "The builder" is
+// Everything the site is made of lives in docs/: pages (Markdown, English in docs/pages and translations in
+// docs/pages/<lang>), templates, assets, the skill, and the example applications in docs/apps. "The builder" page is
 // the README of the builder package in English. Every language has every page: a missing one fails the build.
 // The example application is built with the builder of this repository, so run `npm run build` first.
 import { execSync } from 'node:child_process';
@@ -50,14 +51,14 @@ execSync('npx ng build security', { stdio: 'inherit' });
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync('dist/chart.html', `${out}/example/chart.html`);
-cpSync('projects/chart/src/main.ts', `${out}/example/chart.ts`);
+cpSync('docs/apps/chart/src/main.ts', `${out}/example/chart.ts`);
 cpSync('dist/example.html', `${out}/example/app.html`);
 cpSync('dist/one-file.html', `${out}/example/one-file.html`);
 cpSync('dist/gallery.html', `${out}/example/gallery.html`);
 cpSync('dist/routing.html', `${out}/example/routing.html`);
 cpSync('dist/security.html', `${out}/example/security.html`);
-cpSync('site/assets', `${out}/assets`, { recursive: true });
-cpSync('site/skill', `${out}/skill`, { recursive: true });
+cpSync('docs/assets', `${out}/assets`, { recursive: true });
+cpSync('docs/skill', `${out}/skill`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
 
 // A browser keeps a stylesheet or a script for a while: the address of each one carries a hash of its content, so a
@@ -66,7 +67,7 @@ const ASSET_VERSION = Object.fromEntries(
   ['site.css', 'site.js', 'host.js', 'home.js'].map((name) => [
     name,
     createHash('sha256')
-      .update(readFileSync(`site/assets/${name}`))
+      .update(readFileSync(`docs/assets/${name}`))
       .digest('hex')
       .slice(0, 10),
   ]),
@@ -78,7 +79,7 @@ const asset = (root, name) => `${root}assets/${name}?v=${ASSET_VERSION[name]}`;
 const version = JSON.parse(read('projects/ngx-mcp-apps/package.json')).version;
 
 /** The copy-and-paste components, read from the example application that compiles them. */
-const componentDir = 'projects/example/src/app/components';
+const componentDir = 'docs/apps/example/src/app/components';
 const ORDER = [
   'mcp-status',
   'mcp-tool-state',
@@ -96,7 +97,7 @@ for (const f of files) {
 }
 /** A whole application in one file: compiled as its own project, shown first. */
 const oneFile = (() => {
-  const source = read('projects/one-file/src/main.ts');
+  const source = read('docs/apps/one-file/src/main.ts');
   const lines = /^\/\*\*\n([\s\S]*?)\n \*\//
     .exec(source)[1]
     .split('\n')
@@ -264,9 +265,9 @@ const UI = {
   },
 };
 
-/** The source of a page in a language: English in site/pages, the others in site/pages/<lang>. */
+/** The source of a page in a language: English in docs/pages, the others in docs/pages/<lang>. */
 const pageSource = (lang, name) => {
-  const file = lang === DEFAULT_LANG ? `site/pages/${name}.md` : `site/pages/${lang}/${name}.md`;
+  const file = lang === DEFAULT_LANG ? `docs/pages/${name}.md` : `docs/pages/${lang}/${name}.md`;
   if (!existsSync(file))
     throw new Error(`${file} is missing: every page needs its ${lang} version`);
   return read(file);
@@ -275,7 +276,7 @@ const pageSource = (lang, name) => {
 /** The components in a language: titles and descriptions translated, code and usage shared. */
 function componentsIn(lang) {
   if (lang === DEFAULT_LANG) return allComponents.map((c) => ({ ...c }));
-  const file = `site/i18n/${lang}/components.json`;
+  const file = `docs/i18n/${lang}/components.json`;
   if (!existsSync(file)) throw new Error(`${file} is missing`);
   const texts = JSON.parse(read(file));
   return allComponents.map((c) => {
@@ -597,8 +598,8 @@ const STAGE_WORDS = {
 };
 const localized = (html) =>
   (STAGE_WORDS[ctx.lang] ?? []).reduce((text, [from, to]) => text.replaceAll(from, to), html);
-const stageSource = read('site/stage.html');
-const previewSource = read('site/preview.html');
+const stageSource = read('docs/templates/stage.html');
+const previewSource = read('docs/templates/preview.html');
 /** The stage of an application of dist/site/example. Its name is also the scenario host.js plays for it. */
 const stageFor = (app) =>
   localized(stageSource)
@@ -913,7 +914,8 @@ for (const lang of LANGS) {
     let body;
     let meta;
     if (page.key === 'index') {
-      const homeFile = lang === DEFAULT_LANG ? 'site/home.html' : `site/${lang}/home.html`;
+      const homeFile =
+        lang === DEFAULT_LANG ? 'docs/templates/home.html' : `docs/templates/${lang}/home.html`;
       if (!existsSync(homeFile)) throw new Error(`${homeFile} is missing`);
       const home = read(homeFile);
       body = home
@@ -983,7 +985,7 @@ write(
 
 // ---------------------------------------------------------------- for agents
 
-const skill = read('site/skill/ngx-mcp-apps/SKILL.md');
+const skill = read('docs/skill/ngx-mcp-apps/SKILL.md');
 const en = built.en.pages;
 write(
   'llms.txt',

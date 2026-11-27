@@ -1,7 +1,7 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../out-tsc/gallery",
+    "outDir": "../../../out-tsc/gallery",
     "strict": true,
     "types": []
   },

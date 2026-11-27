@@ -102,4 +102,4 @@ connected to a host or the host refuses, which is why the call is guarded and th
 
 ## The whole file
 
-<!-- source: projects/routing/src/main.ts -->
+<!-- source: docs/apps/routing/src/main.ts -->
