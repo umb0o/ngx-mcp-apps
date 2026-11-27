@@ -12,6 +12,14 @@ Until 1.0.0 the API may change between minor versions.
   target of the application to the builder, with the `singleFile` option (`dist/<project>.html` by default).
   Options: `--project`, `--single-file`, `--skip-library`.
 
+  Checked on a new application of each major, from Angular 18 to 22: `ng add`, then `ng build`.
+
+### Fixed
+
+- Installing the builder in an application of Angular 18 or 19 failed with a peer dependency conflict: those
+  applications have `@angular/build` only through `@angular-devkit/build-angular`. The peer dependency is now
+  optional and `ng add` lists `@angular/build` in the application, with the version it already uses.
+
 The library itself is unchanged: it is released with the same version as the builder.
 
 ## [0.2.0] - 2026-11-27

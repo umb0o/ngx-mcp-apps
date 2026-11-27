@@ -45,6 +45,33 @@ describe('ng add', () => {
     expect(build(tree, 'shop').builder).toBe('ngx-mcp-apps-builder:application');
   });
 
+  it('lists @angular/build when the application has it only through @angular-devkit/build-angular', async () => {
+    const start = workspace({ shop: app('@angular-devkit/build-angular:application') });
+    start.overwrite(
+      'package.json',
+      JSON.stringify({
+        name: 'w',
+        devDependencies: { '@angular-devkit/build-angular': '^18.2.21', '@angular/cli': '^18.2.0' },
+      }),
+    );
+    const tree = await run(start);
+    expect(JSON.parse(tree.readText('package.json')).devDependencies['@angular/build']).toBe(
+      '^18.2.21',
+    );
+
+    const listed = workspace({ shop: app() });
+    listed.overwrite(
+      'package.json',
+      JSON.stringify({
+        name: 'w',
+        devDependencies: { '@angular/build': '^22.0.0', '@angular/cli': '^22.1.0' },
+      }),
+    );
+    expect(
+      JSON.parse((await run(listed)).readText('package.json')).devDependencies['@angular/build'],
+    ).toBe('^22.0.0');
+  });
+
   it('honours --single-file and --skip-library', async () => {
     const tree = await run(workspace({ shop: app() }), {
       singleFile: 'public/app.html',

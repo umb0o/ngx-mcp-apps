@@ -24,6 +24,20 @@ function libraryRange(): string {
   return `^${version}`;
 }
 
+/**
+ * Applications of Angular 18 and 19 get @angular/build through @angular-devkit/build-angular without listing it.
+ * The builder needs it, so it is listed with the same range as the package that brought it.
+ */
+function angularBuildRange(packageJson: string): string | undefined {
+  const { dependencies = {}, devDependencies = {} } = JSON.parse(packageJson) as Record<
+    string,
+    Record<string, string> | undefined
+  >;
+  const all = { ...dependencies, ...devDependencies };
+  if (all['@angular/build']) return undefined;
+  return all['@angular-devkit/build-angular'] ?? all['@angular/cli'];
+}
+
 export function ngAdd(options: NgAddOptions = {}): Rule {
   return async (tree) => {
     const workspace = await readWorkspace(tree);
@@ -48,6 +62,7 @@ export function ngAdd(options: NgAddOptions = {}): Rule {
         `Project "${name}" is built with "${build.builder}". Only the application builder (${OFFICIAL_BUILDERS[0]}) can be replaced: migrate to it first.`,
       );
     }
+    const angularBuild = angularBuildRange(tree.readText('package.json'));
     const singleFile = options.singleFile ?? `dist/${name}.html`;
 
     return chain([
@@ -59,6 +74,9 @@ export function ngAdd(options: NgAddOptions = {}): Rule {
           singleFile: (target.options?.['singleFile'] as string | undefined) ?? singleFile,
         };
       }),
+      angularBuild
+        ? addDependency('@angular/build', angularBuild, { type: DependencyType.Dev })
+        : () => {},
       options.skipLibrary
         ? () => {}
         : addDependency('ngx-mcp-apps', libraryRange(), { type: DependencyType.Default }),

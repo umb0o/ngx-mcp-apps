@@ -36,6 +36,9 @@
     "@schematics/angular": ">=18.0.0 <23.0.0"
   },
   "peerDependenciesMeta": {
+    "@angular/build": {
+      "optional": true
+    },
     "@angular-devkit/schematics": {
       "optional": true
     },
