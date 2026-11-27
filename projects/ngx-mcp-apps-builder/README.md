@@ -10,6 +10,21 @@ is inlined.
 ## Install
 
 ```bash
+ng add ngx-mcp-apps-builder
+```
+
+It installs the builder as a dev dependency, adds the [ngx-mcp-apps](https://www.npmjs.com/package/ngx-mcp-apps)
+library and switches the `build` target of your application to this builder.
+
+| Option           |                                                                              |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `--project`      | The application to set up. Needed only when the workspace has more than one. |
+| `--single-file`  | Path of the HTML file. Default: `dist/<project>.html`.                       |
+| `--skip-library` | Do not add `ngx-mcp-apps`.                                                   |
+
+Or by hand:
+
+```bash
 npm install -D ngx-mcp-apps-builder
 ```
 
@@ -35,7 +50,8 @@ version of `@angular/build` does not know it.
 
 ## Use
 
-In `angular.json`, replace the builder of the `build` target and add the `singleFile` option:
+`ng add` writes this for you. By hand: in `angular.json`, replace the builder of the `build` target and add the
+`singleFile` option:
 
 ```json
 {

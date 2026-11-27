@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "NgxMcpAppsBuilderNgAdd",
+  "title": "ng add ngx-mcp-apps-builder",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Name of the application to set up. Default: the only application of the workspace.",
+      "$default": { "$source": "projectName" }
+    },
+    "singleFile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path of the single HTML file, relative to the workspace root. Default: dist/<project>.html."
+    },
+    "skipLibrary": {
+      "type": "boolean",
+      "default": false,
+      "description": "Do not add the ngx-mcp-apps library to the dependencies."
+    }
+  }
+}

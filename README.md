@@ -35,6 +35,15 @@ You need an Angular application (Angular 18 to 22, see [Compatibility](#compatib
 ### 1. Install
 
 ```bash
+ng add ngx-mcp-apps-builder
+```
+
+This installs the builder and the library, and sets up the `build` target of your application to write one HTML
+file (`dist/<project>.html`; choose another path with `--single-file`). Step 4 shows what it changes.
+
+By hand instead:
+
+```bash
 npm install ngx-mcp-apps
 npm install -D ngx-mcp-apps-builder
 ```
@@ -86,7 +95,8 @@ The connection starts on its own when `McpApp` is first injected. Outside a host
 ### 4. Build one HTML file
 
 Hosts load the app from one HTML resource inside a sandboxed iframe, so the build must not need other files.
-In `angular.json`, replace the builder of the `build` target and add the `singleFile` option:
+`ng add` has already done this. By hand: in `angular.json`, replace the builder of the `build` target and add the
+`singleFile` option:
 
 ```json
 {

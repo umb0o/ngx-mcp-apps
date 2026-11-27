@@ -34,6 +34,12 @@ const builders = readJson(`${src}/builders.json`);
 delete builders.$schema;
 writeFileSync(`${dist}/builders.json`, JSON.stringify(builders, null, 2) + '\n');
 
+// The ng-add schematic
+const collection = readJson(`${src}/collection.json`);
+delete collection.$schema;
+writeFileSync(`${dist}/collection.json`, JSON.stringify(collection, null, 2) + '\n');
+copyFileSync(`${src}/src/ng-add/schema.json`, `${dist}/ng-add/schema.json`);
+
 copyFileSync(`${src}/package.json`, `${dist}/package.json`);
 copyFileSync(`${src}/README.md`, `${dist}/README.md`);
 copyFileSync('LICENSE', `${dist}/LICENSE`);

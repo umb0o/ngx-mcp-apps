@@ -1,6 +1,6 @@
 {
   "name": "ngx-mcp-apps-builder",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Angular CLI builder for MCP Apps: builds an Angular application into one self-contained HTML file.",
   "keywords": [
     "angular",
@@ -23,10 +23,27 @@
     "url": "https://github.com/umb0o/ngx-mcp-apps/issues"
   },
   "builders": "./builders.json",
+  "schematics": "./collection.json",
+  "ng-add": {
+    "save": "devDependencies"
+  },
   "main": "./application/index.js",
   "types": "./application/index.d.ts",
   "peerDependencies": {
     "@angular-devkit/architect": ">=0.1800.0 <0.2300.0",
-    "@angular/build": ">=18.0.0 <23.0.0"
+    "@angular/build": ">=18.0.0 <23.0.0",
+    "@angular-devkit/schematics": ">=18.0.0 <23.0.0",
+    "@schematics/angular": ">=18.0.0 <23.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular/build": {
+      "optional": true
+    },
+    "@angular-devkit/schematics": {
+      "optional": true
+    },
+    "@schematics/angular": {
+      "optional": true
+    }
   }
 }
