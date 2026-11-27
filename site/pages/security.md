@@ -81,7 +81,23 @@ debugging: leave it off in an app that real users open.
 
 ## The checklist
 
-<!-- checklist -->
+What the library does:
+
+- accepts messages only from the parent window, and ignores anything that is not JSON-RPC 2.0;
+- checks the shape of every notification and result before exposing it; invalid data is dropped or raised as `McpError`;
+- never evaluates code and never writes host data into the DOM (no `eval`, no `innerHTML`; host styles are not applied);
+- bounds what it keeps: 50 log entries, each cut at 1000 characters, and a minimum polling interval of 100 ms;
+- has no runtime dependencies.
+
+What is up to you:
+
+- **The host is trusted, the content is not.** Tool results come from your server and, through it, from the model:
+  render them with Angular bindings (`{{ }}`), not with `[innerHTML]`.
+- **Do not put secrets in the HTML.** Whoever can read the resource from your MCP server can read the whole app.
+- **Outgoing messages go to any parent origin by default**, because hosts wrap the app in a
+  sandbox whose origin you usually do not know. If you do know it, set `allowedOrigins`.
+- **Protect your MCP server.** An unauthenticated server lets anyone with the URL call its tools.
+- `log: true` stores host and server data in memory to show it: use it while debugging.
 
 ## The server side
 

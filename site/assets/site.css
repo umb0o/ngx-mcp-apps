@@ -20,9 +20,9 @@
   --pit-line: #2a443f;
   --app-lit: #ff86ab;
   --host-lit: #55d6ca;
-  --display: 'Archivo', 'Segoe UI', system-ui, sans-serif;
-  --body: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'Martian Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --display: 'Geist', 'Segoe UI', system-ui, sans-serif;
+  --body: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   color-scheme: light;
 }
 :root[data-theme='dark'] {
@@ -48,7 +48,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 400 1.02rem/1.62 var(--body);
+  font: 400 1.0625rem/1.65 var(--body);
   -webkit-text-size-adjust: 100%;
 }
 ::selection {
@@ -72,7 +72,6 @@ a:hover {
 }
 code {
   font-family: var(--mono);
-  font-stretch: 80%;
   font-size: 0.84em;
 }
 button {
@@ -84,8 +83,7 @@ button {
 .for-agents {
   margin: 0;
   padding: 0.45rem 1.25rem;
-  font: 320 0.7rem/1.6 var(--mono);
-  font-stretch: 80%;
+  font: 400 0.7rem/1.6 var(--mono);
   color: var(--muted);
   border-bottom: 1px solid var(--line);
 }
@@ -122,8 +120,7 @@ button {
   overflow-y: auto;
 }
 .brand {
-  font: 800 1.08rem/1.2 var(--display);
-  font-stretch: 118%;
+  font: 700 1.08rem/1.2 var(--display);
   letter-spacing: -0.01em;
   color: var(--ink);
   text-decoration: none;
@@ -132,7 +129,6 @@ button {
   display: block;
   margin-top: 0.3rem;
   font: 400 0.68rem var(--mono);
-  font-stretch: 80%;
   letter-spacing: 0;
   color: var(--muted);
 }
@@ -207,15 +203,13 @@ h3 {
 }
 .prose h1 {
   font-size: 2.7rem;
-  font-weight: 800;
-  font-stretch: 122%;
+  font-weight: 700;
   letter-spacing: -0.035em;
   margin: 0 0 1.5rem;
 }
 .prose h2 {
   font-size: 1.55rem;
-  font-weight: 750;
-  font-stretch: 114%;
+  font-weight: 600;
   letter-spacing: -0.02em;
   margin: 3.5rem 0 0.85rem;
   padding-top: 1.4rem;
@@ -224,7 +218,6 @@ h3 {
 .prose h3 {
   font-size: 1.14rem;
   font-weight: 700;
-  font-stretch: 108%;
   letter-spacing: -0.01em;
   margin: 2.2rem 0 0.5rem;
 }
@@ -273,8 +266,7 @@ pre {
   border: 1px solid var(--pit-line);
   background: var(--pit) !important;
   color: var(--pit-ink);
-  font: 320 0.78rem/1.7 var(--mono);
-  font-stretch: 80%;
+  font: 400 0.78rem/1.7 var(--mono);
   tab-size: 2;
   scrollbar-color: var(--pit-line) transparent;
 }
@@ -321,7 +313,6 @@ td {
 }
 th {
   font-weight: 700;
-  font-stretch: 108%;
   padding-bottom: 0.45rem;
   border-bottom: 1.5px solid var(--ink);
 }
@@ -350,10 +341,9 @@ td:first-child code {
 .hero h1 {
   margin: 0 0 1.5rem;
   font-size: clamp(2.5rem, 1.1rem + 4.4vw, 4.6rem);
-  font-weight: 800;
-  font-stretch: 125%;
+  font-weight: 700;
   line-height: 0.96;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.035em;
   overflow-wrap: break-word;
 }
 .lede {
@@ -393,7 +383,6 @@ td:first-child code {
   padding: 0.65rem 1rem;
   border-bottom: 1px solid var(--line);
   font-weight: 650;
-  font-stretch: 108%;
 }
 .face {
   width: 1.1rem;
@@ -444,13 +433,11 @@ td:first-child code {
   justify-content: space-between;
   align-items: baseline;
   gap: 0.75rem;
-  font: 750 1.05rem/1.2 var(--display);
-  font-stretch: 112%;
+  font: 600 1.05rem/1.2 var(--display);
   letter-spacing: -0.015em;
 }
 .sample {
   font: 400 0.62rem/1.2 var(--mono);
-  font-stretch: 80%;
   letter-spacing: 0;
   color: var(--muted);
 }
@@ -572,7 +559,7 @@ td:first-child code {
   margin-bottom: 0.2rem;
   font-size: 0.86rem;
   font-style: normal;
-  font-weight: 750;
+  font-weight: 600;
   color: var(--app);
   opacity: 0;
 }
@@ -794,7 +781,6 @@ td:first-child code {
   background: var(--ink);
   color: var(--bg);
   font-weight: 650;
-  font-stretch: 108%;
   text-decoration: none;
 }
 .go:hover {
@@ -924,7 +910,6 @@ td:first-child code {
   left: 0.9rem;
   padding: 0 0.4rem;
   font: 500 0.66rem/1.2rem var(--mono);
-  font-stretch: 80%;
   color: var(--app);
   background: var(--surface);
 }
@@ -990,7 +975,6 @@ td:first-child code {
   border: 0;
   font-size: 1rem;
   font-weight: 700;
-  font-stretch: 112%;
   letter-spacing: -0.01em;
 }
 .wire button {
@@ -1006,7 +990,6 @@ td:first-child code {
   margin: 0;
   padding: 0 1.1rem 0.45rem;
   font: 500 0.7rem/1.4 var(--mono);
-  font-stretch: 80%;
 }
 .ends span:first-child {
   color: var(--app-lit);
@@ -1024,8 +1007,7 @@ td:first-child code {
   max-height: 36rem;
   overflow-y: auto;
   scrollbar-color: var(--pit-line) transparent;
-  font: 320 0.72rem/1.55 var(--mono);
-  font-stretch: 78%;
+  font: 400 0.72rem/1.55 var(--mono);
   /* The two lifelines stay in place while the messages scroll */
   background:
     linear-gradient(var(--rail), var(--rail)) 1.1rem 0 / 1px 100% no-repeat,
@@ -1109,8 +1091,7 @@ td:first-child code {
 .dev h2 {
   margin: 0 0 1.5rem;
   font-size: 1.9rem;
-  font-weight: 800;
-  font-stretch: 120%;
+  font-weight: 700;
   letter-spacing: -0.03em;
 }
 .uses-list {
@@ -1125,8 +1106,7 @@ td:first-child code {
 .uses-list h3 {
   margin: 0 0 0.5rem;
   font-size: 1.22rem;
-  font-weight: 750;
-  font-stretch: 114%;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 .uses-list p {
@@ -1184,8 +1164,7 @@ td:first-child code {
 .facts h3 {
   margin: 0;
   font-size: 1.18rem;
-  font-weight: 750;
-  font-stretch: 114%;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 .facts h3 code {
@@ -1211,8 +1190,7 @@ td:first-child code {
 .next strong {
   display: block;
   margin-bottom: 0.3rem;
-  font: 750 1.12rem/1.2 var(--display);
-  font-stretch: 114%;
+  font: 600 1.12rem/1.2 var(--display);
   letter-spacing: -0.015em;
   color: var(--ink);
   text-decoration: underline;
@@ -1498,4 +1476,135 @@ td:first-child code {
 }
 .panel > :last-child {
   margin-bottom: 0;
+}
+
+/* "On this page": the headings of a long page, beside the text on a wide screen, folded on a phone */
+.doc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.toc {
+  display: none;
+}
+.toc-fold {
+  margin: 0 0 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.94rem;
+}
+.toc-fold summary {
+  cursor: pointer;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+}
+.toc-fold ul,
+.toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.9rem 0.7rem;
+  display: grid;
+  gap: 0.3rem;
+}
+.toc-fold a,
+.toc a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.toc-fold a:hover,
+.toc a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--app);
+}
+@media (min-width: 80rem) {
+  .doc {
+    grid-template-columns: minmax(0, 1fr) 12rem;
+    gap: 0 3rem;
+    align-items: start;
+  }
+  .toc-fold {
+    display: none;
+  }
+  .toc {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    padding-left: 1rem;
+    border-left: 1px solid var(--line);
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+  .toc p {
+    margin: 0.2rem 0 0.7rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .toc ul {
+    padding: 0;
+    gap: 0.55rem;
+  }
+}
+
+/* Previous and next page, at the bottom of every page */
+.pager {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 45rem;
+  margin: 4.5rem 0 0;
+}
+.pager a {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem 1.1rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.pager span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.pager strong {
+  font: 600 1.05rem/1.3 var(--display);
+  letter-spacing: -0.01em;
+}
+.pager .to-prev:hover {
+  border-color: var(--ink);
+}
+.pager .to-next {
+  grid-column: 2;
+  text-align: right;
+  border: 1.5px solid var(--ink);
+}
+.pager .to-next strong {
+  font-size: 1.15rem;
+}
+.pager a:focus-visible {
+  outline-offset: 3px;
+}
+.pager .to-next:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+.pager .to-next:hover span {
+  color: inherit;
+}
+@media (max-width: 40rem) {
+  .pager {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+  }
+  .pager .to-next {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .pager > span:empty {
+    display: none;
+  }
 }

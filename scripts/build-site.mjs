@@ -1,7 +1,7 @@
 // Builds the documentation site into dist/site: static HTML for people, and the same content as plain text
 // for coding agents (llms.txt, llms-full.txt, every page as Markdown, the components as raw files, a skill).
 //
-// The README files are the source of truth for the documentation: the pages are cut out of them.
+// The pages are Markdown files of site/pages; "The builder" is the README of the builder package.
 // The example application is built with the builder of this repository, so run `npm run build` first.
 import { execSync } from 'node:child_process';
 import {
@@ -59,31 +59,6 @@ cpSync('site/skill', `${out}/skill`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
 
 // ---------------------------------------------------------------- sources
-
-/** Sections of a Markdown file, by the text of their `## ` heading. */
-function sections(markdown) {
-  const parts = new Map();
-  let name = '';
-  for (const line of markdown.split('\n')) {
-    const heading = /^## (.+)$/.exec(line);
-    if (heading && !inFence(parts.get(name))) name = heading[1].trim();
-    parts.set(name, (parts.get(name) ?? '') + line + '\n');
-  }
-  return parts;
-}
-/** True if the text ends inside a code fence: a "## " line there is not a heading. */
-function inFence(text = '') {
-  return (text.match(/^```/gm) ?? []).length % 2 === 1;
-}
-
-const readme = sections(read('README.md'));
-const take = (...names) =>
-  names
-    .map((n) => {
-      if (!readme.has(n)) throw new Error(`README.md has no section "${n}"`);
-      return readme.get(n).trim();
-    })
-    .join('\n\n');
 
 const version = JSON.parse(read('projects/ngx-mcp-apps/package.json')).version;
 
@@ -185,13 +160,7 @@ const listHtml = (name) =>
     )
     .join('\n')}\n</ul>`;
 
-const componentPage = (c, i) => {
-  const previous = allComponents[i - 1];
-  const next = allComponents[i + 1];
-  const around = [
-    previous && `Previous: [${previous.title}](${previous.key}.html)`,
-    next && `Next: [${next.title}](${next.key}.html)`,
-  ].filter(Boolean);
+const componentPage = (c) => {
   return {
     key: c.key,
     parent: 'components',
@@ -206,8 +175,7 @@ const componentPage = (c, i) => {
       '```ts\n' +
       c.source.trim() +
       '\n```\n\n' +
-      '<!-- /tabs -->\n\n' +
-      around.join('\n\n'),
+      '<!-- /tabs -->\n',
   };
 };
 
@@ -245,17 +213,13 @@ const pages = [
     key: 'start',
     nav: 'Get started',
     title: 'Get started',
-    markdown:
-      '# Get started\n\n' +
-      take('Quick start', 'How it fits together').replace(/^## Quick start\n+/, ''),
+    markdown: read('site/pages/start.md'),
   },
   {
     key: 'guide',
     nav: 'Working with the model',
     title: 'Working with the model',
-    markdown:
-      '# Working with the model\n\n' +
-      take('Following the model while the app is open', 'Checking your own data'),
+    markdown: read('site/pages/guide.md'),
   },
   {
     key: 'routing',
@@ -267,11 +231,7 @@ const pages = [
     key: 'security',
     nav: 'Security',
     title: 'Security',
-    // The checklist stays in the README, its one source: here it follows the live example
-    markdown: withSources(read('site/pages/security.md')).replace(
-      '<!-- checklist -->',
-      take('Security').replace(/^## Security\n+/, ''),
-    ),
+    markdown: withSources(read('site/pages/security.md')),
   },
   {
     key: 'theme',
@@ -302,14 +262,17 @@ const pages = [
     key: 'builder',
     nav: 'The builder',
     title: 'The builder',
-    markdown: read('projects/ngx-mcp-apps-builder/README.md').replace(/^# .+$/m, '# The builder'),
+    // The npm page of the builder: its badges belong to npm and GitHub, not to this page
+    markdown: read('projects/ngx-mcp-apps-builder/README.md')
+      .replace(/^# .+$/m, '# The builder')
+      .replace(/^(?:\[!\[[^\n]*\n)+\n/m, ''),
     base: 'projects/ngx-mcp-apps-builder',
   },
   {
     key: 'reference',
     nav: 'Reference',
     title: 'Reference',
-    markdown: '# Reference\n\n' + take('API', 'Configuration', 'Compatibility', 'Limits'),
+    markdown: read('site/pages/reference.md'),
   },
   {
     key: 'agents',
@@ -444,6 +407,8 @@ function componentMenu(page) {
 }
 
 function render(page) {
+  // The `##` headings, for the list "On this page"
+  page.toc = [];
   const marked = new Marked({
     gfm: true,
     renderer: {
@@ -451,6 +416,7 @@ function render(page) {
         const html = this.parser.parseInline(tokens);
         const id = slug(html);
         if (depth === 1) return `<h1 id="${id}">${html}</h1>\n`;
+        if (depth === 2) page.toc.push({ id, html });
         return `<h${depth} id="${id}"><a class="anchor" href="#${id}">${html}</a></h${depth}>\n`;
       },
       link({ href, tokens }) {
@@ -491,6 +457,31 @@ function render(page) {
   );
 }
 
+/** "On this page": the `##` headings of a long page. Beside the text on a wide screen, folded on a phone. */
+function onThisPage(page) {
+  if (page.key === 'index' || (page.toc?.length ?? 0) < 3) return { aside: '', fold: '' };
+  const items = page.toc.map((h) => `<li><a href="#${h.id}">${h.html}</a></li>`).join('\n');
+  return {
+    aside: `<nav class="toc" aria-label="On this page"><p>On this page</p><ul>\n${items}\n</ul></nav>`,
+    fold: `<details class="toc-fold"><summary>On this page</summary><ul>\n${items}\n</ul></details>`,
+  };
+}
+
+/** Previous and next page, in the order of the navigation: every page leads on to the next. */
+function pager(page) {
+  const i = pages.indexOf(page);
+  const link = (p, rel, label) =>
+    p
+      ? `<a class="to-${rel}" rel="${rel}" href="${p.key}.html"><span>${label}</span><strong>${escapeHtml(p.nav ?? p.title)}</strong></a>`
+      : '<span></span>';
+  return (
+    '<nav class="pager" aria-label="Pages">' +
+    link(pages[i - 1], 'prev', 'Previous') +
+    link(pages[i + 1], 'next', 'Next') +
+    '</nav>'
+  );
+}
+
 const description =
   'Write MCP Apps, the interactive pages shown inside AI chats such as Claude, as normal Angular applications.';
 
@@ -524,7 +515,7 @@ function layout(page, body) {
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23b80f4a'/%3E%3Crect x='3' y='4' width='10' height='8' rx='1.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="assets/site.css" />
   </head>
   <body class="page-${page.key}">
@@ -549,6 +540,7 @@ function layout(page, body) {
       </header>
       <main>
 ${body}
+${pager(page)}
       </main>
     </div>
     <script type="module" src="assets/site.js"></script>
@@ -559,13 +551,21 @@ ${body}
 `;
 }
 
+/** A page of text, with its list "On this page" when it is long. */
+function doc(page) {
+  const article = render(page);
+  const { aside, fold } = onThisPage(page);
+  if (!aside) return `<article class="prose">\n${article}\n</article>`;
+  return `<div class="doc">\n${fold}\n<article class="prose">\n${article}\n</article>\n${aside}\n</div>`;
+}
+
 for (const page of pages) {
   const body =
     page.key === 'index'
       ? read('site/home.html').replace('<!-- stage -->', stage).replace('<!-- version -->', version)
       : page.key === 'components' || page.parent === 'components'
         ? `<div class="with-menu">\n${componentMenu(page)}\n<article class="prose">\n${render(page)}\n</article>\n</div>`
-        : `<article class="prose">\n${render(page)}\n</article>`;
+        : doc(page);
   write(`${page.key}.html`, layout(page, body));
   write(`${page.key}.md`, markdownFor(page) + '\n');
 }

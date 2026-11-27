@@ -5,12 +5,14 @@ description: Build an MCP App (an interactive page shown inside an AI chat such 
 
 # Building an MCP App with Angular and ngx-mcp-apps
 
-An MCP App is one HTML page that a chat host (Claude and others) shows in a sandboxed iframe when the model calls
+An MCP App is one HTML page that a chat host such as Claude shows in a sandboxed iframe when the model calls
 a tool. `ngx-mcp-apps` speaks the MCP Apps protocol with the host and exposes it as Angular signals.
 `ngx-mcp-apps-builder` builds the Angular application into the single HTML file hosts expect.
 
 Full documentation as plain text: https://umb0o.github.io/ngx-mcp-apps/llms-full.txt
 Source of every copy-and-paste component: https://umb0o.github.io/ngx-mcp-apps/components/index.json
+
+Hosts: Tested with Claude: claude.ai on the web and the Claude app for Android. The library follows the MCP Apps specification (protocol 2026-01-26), so other hosts that implement it should work, but they have not been tried.
 
 ## Steps
 
