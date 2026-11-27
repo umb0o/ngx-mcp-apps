@@ -1,3 +1,21 @@
+// The few words this script writes, in the language of the page
+const WORDS =
+  document.documentElement.lang === 'it'
+    ? {
+        light: 'Tema chiaro',
+        dark: 'Tema scuro',
+        copy: 'Copia',
+        copied: 'Copiato',
+        select: 'Seleziona e copia',
+      }
+    : {
+        light: 'Light theme',
+        dark: 'Dark theme',
+        copy: 'Copy',
+        copied: 'Copied',
+        select: 'Select and copy',
+      };
+
 // Theme, copy buttons and the note for automated readers. The pages work without this file.
 const root = document.documentElement;
 
@@ -18,7 +36,7 @@ root.dataset.theme =
 
 for (const button of document.querySelectorAll('[data-theme-toggle]')) {
   const label = () =>
-    (button.textContent = root.dataset.theme === 'dark' ? 'Light theme' : 'Dark theme');
+    (button.textContent = root.dataset.theme === 'dark' ? WORDS.light : WORDS.dark);
   label();
   button.addEventListener('click', () => {
     root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -36,16 +54,16 @@ for (const pre of document.querySelectorAll('pre')) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'copy';
-  button.textContent = 'Copy';
+  button.textContent = WORDS.copy;
   button.addEventListener('click', async () => {
     const code = pre.querySelector('code')?.textContent ?? '';
     try {
       await navigator.clipboard.writeText(code);
-      button.textContent = 'Copied';
+      button.textContent = WORDS.copied;
     } catch {
-      button.textContent = 'Select and copy';
+      button.textContent = WORDS.select;
     }
-    setTimeout(() => (button.textContent = 'Copy'), 1600);
+    setTimeout(() => (button.textContent = WORDS.copy), 1600);
   });
   pre.append(button);
 }

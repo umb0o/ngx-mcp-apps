@@ -6,6 +6,9 @@ Until 1.0.0 the API may change between minor versions.
 
 ## [Unreleased]
 
+- The documentation site is in English and Italian (`/it/`), with a language switch, `hreflang`, a sitemap,
+  canonical addresses, social previews, structured data (schema.org) and a questions section on the home.
+
 Documentation only: no change to the packages.
 
 ### Changed

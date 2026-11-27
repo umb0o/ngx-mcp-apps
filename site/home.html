@@ -188,6 +188,56 @@
   </div>
 </section>
 
+<section class="faq" aria-labelledby="faq-title">
+  <h2 id="faq-title">Questions</h2>
+  <details>
+    <summary>What is an MCP App?</summary>
+    <p>
+      A small web page that a chat host shows inside the conversation when the model calls a tool of
+      an MCP server. It is defined by the MCP Apps extension of the Model Context Protocol: the page
+      runs in a sandboxed frame and talks to the host with messages.
+    </p>
+  </details>
+  <details>
+    <summary>What does ngx-mcp-apps do?</summary>
+    <p>
+      It lets you write that page as a normal Angular application. The library speaks the protocol
+      with the host and exposes the connection, the tool data, the host theme and the display mode
+      as signals. The builder turns the application into the single HTML file that hosts expect.
+    </p>
+  </details>
+  <details>
+    <summary>Which versions of Angular are supported?</summary>
+    <p>
+      Angular 18, 19, 20, 21 and 22, for both packages. Each version is checked automatically with a
+      new application that uses Angular Material.
+    </p>
+  </details>
+  <details>
+    <summary>Which hosts does it work with?</summary>
+    <p>
+      It has been tried in Claude: claude.ai on the web and the Claude app for Android. The library
+      follows the MCP Apps specification, so other hosts that implement it should work, but they
+      have not been tried.
+    </p>
+  </details>
+  <details>
+    <summary>Can the app use lazy loading?</summary>
+    <p>
+      Yes. Lazy routes, <code>&#64;defer</code> blocks and dynamic <code>import()</code> are merged
+      into the single file by the builder: they work, but everything is loaded with the app. Web
+      workers are not supported.
+    </p>
+  </details>
+  <details>
+    <summary>Is it an official project?</summary>
+    <p>
+      No. It is an unofficial community library under the MIT licence, not affiliated with or
+      endorsed by Anthropic, OpenAI or the Model Context Protocol project.
+    </p>
+  </details>
+</section>
+
 <p class="disclaimer">
   Version
   <!-- version -->. MIT licence. Unofficial community library, not affiliated with or endorsed by

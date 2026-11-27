@@ -15,7 +15,8 @@ Write MCP Apps, the interactive pages shown inside AI chats such as Claude, as n
 **[Documentation](https://umb0o.github.io/ngx-mcp-apps/)** ·
 [Live example](https://umb0o.github.io/ngx-mcp-apps/example.html) ·
 [Components](https://umb0o.github.io/ngx-mcp-apps/components.html) ·
-[For AI agents](https://umb0o.github.io/ngx-mcp-apps/agents.html)
+[For AI agents](https://umb0o.github.io/ngx-mcp-apps/agents.html) ·
+[In italiano](https://umb0o.github.io/ngx-mcp-apps/it/)
 
 An [MCP App](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp) is a small web
 page that a chat host shows inside the conversation when the model calls a tool: a chart, a form, a list to tick,

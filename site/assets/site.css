@@ -1613,3 +1613,31 @@ td:first-child code {
     display: none;
   }
 }
+
+/* Home: questions, one line each until opened */
+.faq {
+  max-width: 46rem;
+  margin: 5rem 0 0;
+}
+.faq h2 {
+  margin: 0 0 1rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.faq details {
+  border-top: 1px solid var(--line);
+}
+.faq details:last-of-type {
+  border-bottom: 1px solid var(--line);
+}
+.faq summary {
+  cursor: pointer;
+  padding: 0.9rem 0;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+.faq details p {
+  margin: 0 0 1rem;
+  color: var(--muted);
+}

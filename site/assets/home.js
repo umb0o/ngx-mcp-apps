@@ -1,3 +1,9 @@
+// The few words this script writes, in the language of the page
+const WORDS =
+  document.documentElement.lang === 'it'
+    ? { packed: (n) => `${n} di 4 pronti`, pause: 'Pausa', play: 'Riproduci' }
+    : { packed: (n) => `${n} of 4 packed`, pause: 'Pause', play: 'Play' };
+
 // The animated scene of the home page: three short stories played in a chat window.
 // The markup holds every story in its finished state, so the page is complete without this file.
 // Here each story is rewound and replayed as a list of timed steps.
@@ -47,7 +53,7 @@ if (scene) {
       const pack = (n) => {
         items[n - 1].classList.add('on');
         card.dataset.packed = n;
-        count.textContent = `${n} of 4 packed`;
+        count.textContent = WORDS.packed(n);
       };
       at(t + 700, () => pointAt(items[0]));
       at(t + 1300, () => (tap(), pack(1)));
@@ -71,7 +77,7 @@ if (scene) {
     const card = story.querySelector('[data-packed]');
     if (card) {
       card.dataset.packed = 0;
-      story.querySelector('[data-count]').textContent = '0 of 4 packed';
+      story.querySelector('[data-count]').textContent = WORDS.packed(0);
     }
   };
 
@@ -149,7 +155,7 @@ if (scene) {
 
   toggle.addEventListener('click', () => {
     wanted = !wanted;
-    toggle.textContent = wanted ? 'Pause' : 'Play';
+    toggle.textContent = wanted ? WORDS.pause : WORDS.play;
     if (wanted && elapsed >= current.length) load(index);
     wake();
   });
@@ -167,7 +173,7 @@ if (scene) {
   }).observe(scene);
 
   controls.hidden = false;
-  toggle.textContent = wanted ? 'Pause' : 'Play';
+  toggle.textContent = wanted ? WORDS.pause : WORDS.play;
   if (wanted) load(0);
   else finish(0);
   wake();
