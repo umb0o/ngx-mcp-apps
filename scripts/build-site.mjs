@@ -40,11 +40,13 @@ rmSync(link, { recursive: true, force: true });
 symlinkSync(resolve('dist/ngx-mcp-apps-builder'), link, 'junction');
 execSync('npx ng build example', { stdio: 'inherit' });
 execSync('npx ng build one-file', { stdio: 'inherit' });
+execSync('npx ng build gallery', { stdio: 'inherit' });
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync('dist/example.html', `${out}/example/app.html`);
 cpSync('dist/one-file.html', `${out}/example/one-file.html`);
+cpSync('dist/gallery.html', `${out}/example/gallery.html`);
 cpSync('site/assets', `${out}/assets`, { recursive: true });
 cpSync('site/skill', `${out}/skill`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
@@ -153,28 +155,54 @@ write(
   ) + '\n',
 );
 
-const componentsMarkdown = components
-  .map(
-    (c) =>
-      `## ${c.title}\n\n${c.description}\n\n**Usage:** ${c.usage}\n\n` +
-      `File: [\`${c.file}\`](components/${c.file})\n\n\`\`\`ts\n${c.source.trim()}\n\`\`\``,
-  )
-  .join('\n\n');
+// The Components page is a list to choose from; each component has a page of its own with the code.
+const allComponents = [oneFile, ...components];
+for (const c of allComponents) {
+  c.key = `component-${c.name}`;
+  const text = c.description.replace(/\n/g, ' ');
+  const end = text.indexOf('. ');
+  c.summary = end === -1 ? text : text.slice(0, end + 1);
+}
+const LISTS = { 'one-file': [oneFile], pieces: components };
+/** `<!-- list: name -->` as Markdown, for agents. */
+const listMarkdown = (name) =>
+  LISTS[name].map((c) => `- [${c.title}](${c.key}.html): ${c.summary}`).join('\n');
+/** `<!-- list: name -->` as HTML: the whole row is the link. */
+const listHtml = (name) =>
+  `<ul class="pick">\n${LISTS[name]
+    .map(
+      (c) =>
+        `<li><a href="${c.key}.html"><strong>${escapeHtml(c.title)}</strong>` +
+        `<span>${escapeHtml(c.summary.replace(/`/g, ''))}</span>` +
+        `<code>${escapeHtml(c.file)}</code></a></li>`,
+    )
+    .join('\n')}\n</ul>`;
 
-const oneFileMarkdown =
-  `## ${oneFile.title}
-
-${oneFile.description}
-
-<!-- stage: one-file -->
-
-**Usage:** ${oneFile.usage}
-
-` +
-  `File: [\`${oneFile.file}\`](components/${oneFile.file})\n\n` +
-  '```ts\n' +
-  oneFile.source.trim() +
-  '\n```';
+const componentPage = (c, i) => {
+  const previous = allComponents[i - 1];
+  const next = allComponents[i + 1];
+  const around = [
+    previous && `Previous: [${previous.title}](${previous.key}.html)`,
+    next && `Next: [${next.title}](${next.key}.html)`,
+  ].filter(Boolean);
+  return {
+    key: c.key,
+    parent: 'components',
+    title: c.title,
+    markdown:
+      `[All components](components.html)\n\n# ${c.title}\n\n${c.description}\n\n` +
+      // Two tabs, as in a component library: seen working (the whole app, or the piece alone), then the code
+      '<!-- tabs -->\n\n' +
+      (c === oneFile ? '<!-- stage: one-file -->\n\n' : `<!-- preview: ${c.name} -->\n\n`) +
+      '<!-- tab: code -->\n\n' +
+      `**Usage:** ${c.usage}\n\nFile: [\`${c.file}\`](components/${c.file})\n\n` +
+      '```ts\n' +
+      c.source.trim() +
+      '\n```\n\n' +
+      '<!-- /tabs -->\n\n' +
+      around.join('\n\n'),
+  };
+};
 
 /** Replaces `<!-- source: path -->` with the file as a code block. */
 const withSources = (markdown) =>
@@ -225,10 +253,9 @@ const pages = [
     key: 'components',
     nav: 'Components',
     title: 'Components',
-    markdown: read('site/pages/components.md')
-      .replace('<!-- components -->', componentsMarkdown)
-      .replace('<!-- one-file -->', oneFileMarkdown),
+    markdown: read('site/pages/components.md'),
   },
+  ...allComponents.map(componentPage),
   {
     key: 'example',
     nav: 'The example',
@@ -333,6 +360,8 @@ function mapLink(href, page, ext) {
 function markdownFor(page) {
   let fence = false;
   return page.markdown
+    .replace(/<!-- (?:tabs|tab: \w+|\/tabs) -->\n*/g, '')
+    .replace(/<!-- list: ([\w-]+) -->/g, (_, name) => listMarkdown(name))
     .split('\n')
     .map((line) => {
       if (line.startsWith('```')) fence = !fence;
@@ -341,7 +370,7 @@ function markdownFor(page) {
     })
     .join('\n')
     .replace(
-      /<!-- stage(: [\w-]+)? -->/g,
+      /<!-- (?:stage|preview)(: [\w-]+)? -->/g,
       `(A live demo is shown here in the HTML page: ${SITE_URL}${page.key}.html)`,
     );
 }
@@ -349,7 +378,7 @@ function markdownFor(page) {
 // ---------------------------------------------------------------- HTML
 
 const highlighter = await createHighlighter({
-  themes: ['github-light', 'github-dark-dimmed'],
+  themes: ['poimandres'],
   langs: ['ts', 'js', 'json', 'bash', 'html', 'css'],
 });
 
@@ -357,8 +386,29 @@ const stageTemplate = read('site/stage.html');
 const stageFor = (app) => stageTemplate.replaceAll('APP_URL', `example/${app}.html`);
 const stage = stageFor('app');
 /** `<!-- stage -->` is the example, `<!-- stage: name -->` another application of dist/site/example. */
+const previewTemplate = read('site/preview.html');
 const withStages = (html) =>
-  html.replace(/<!-- stage(?:: ([\w-]+))? -->/g, (_, app) => stageFor(app ?? 'app'));
+  html
+    .replace(/<!-- stage(?:: ([\w-]+))? -->/g, (_, app) => stageFor(app ?? 'app'))
+    // `<!-- preview: name -->`: one component alone, in the gallery application
+    .replace(/<!-- preview: ([\w-]+) -->/g, (_, name) =>
+      previewTemplate.replaceAll('APP_URL', `example/gallery.html#${name}`),
+    );
+
+/** The Components section has its own menu, as component libraries do: pick one, see it, copy it. */
+function componentMenu(page) {
+  const link = (key, text) =>
+    `<li><a href="${key}.html"${key === page.key ? ' aria-current="page"' : ''}>${escapeHtml(text)}</a></li>`;
+  const items = [
+    link('components', 'All components'),
+    ...allComponents.map((c) => link(c.key, c.title)),
+  ].join('\n');
+  // Two forms of the same list: always open beside the text on a wide screen, folded on a phone
+  return (
+    `<nav class="menu" aria-label="Components"><ul>\n${items}\n</ul></nav>\n` +
+    `<details class="menu-fold"><summary>Components: ${escapeHtml(page.parent ? page.title : 'all')}</summary><ul>\n${items}\n</ul></details>`
+  );
+}
 
 function render(page) {
   const marked = new Marked({
@@ -376,11 +426,7 @@ function render(page) {
       code({ text, lang }) {
         const known = highlighter.getLoadedLanguages().includes(lang);
         if (!known) return `<pre><code>${escapeHtml(text)}</code></pre>\n`;
-        return highlighter.codeToHtml(text, {
-          lang,
-          themes: { light: 'github-light', dark: 'github-dark-dimmed' },
-          defaultColor: false,
-        });
+        return highlighter.codeToHtml(text, { lang, theme: 'poimandres' });
       },
       table(token) {
         // Wide tables scroll on their own instead of widening the page
@@ -397,7 +443,19 @@ function render(page) {
       },
     },
   });
-  return withStages(marked.parse(page.markdown));
+  return (
+    withStages(marked.parse(page.markdown))
+      .replace(/<!-- list: ([\w-]+) -->/g, (_, name) => listHtml(name))
+      // Preview and Code as two tabs. Without JavaScript the tab bar stays hidden and both parts show.
+      .replace(
+        '<!-- tabs -->',
+        '<div class="tabs" data-tabs>\n<div class="tablist" role="tablist" aria-label="Preview or code" hidden>' +
+          '<button type="button" role="tab">Preview</button><button type="button" role="tab">Code</button></div>\n' +
+          '<div class="panel" role="tabpanel">',
+      )
+      .replace('<!-- tab: code -->', '</div>\n<div class="panel" role="tabpanel">')
+      .replace('<!-- /tabs -->', '</div>\n</div>')
+  );
 }
 
 const description =
@@ -405,9 +463,10 @@ const description =
 
 function layout(page, body) {
   const nav = pages
+    .filter((p) => !p.parent)
     .map(
       (p) =>
-        `<li><a href="${p.key}.html"${p.key === page.key ? ' aria-current="page"' : ''}>${p.nav}</a></li>`,
+        `<li><a href="${p.key}.html"${p.key === page.key || p.key === page.parent ? ' aria-current="page"' : ''}>${p.nav}</a></li>`,
     )
     .join('\n          ');
   const title =
@@ -429,10 +488,10 @@ function layout(page, body) {
           t === 'dark' || t === 'light' ? t : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       })();
     </script>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232b4bee'/%3E%3Crect x='3' y='4' width='10' height='8' rx='1.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23b80f4a'/%3E%3Crect x='3' y='4' width='10' height='8' rx='1.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="assets/site.css" />
   </head>
   <body class="page-${page.key}">
@@ -461,6 +520,7 @@ ${body}
     </div>
     <script type="module" src="assets/site.js"></script>
     ${body.includes('data-host') ? '<script type="module" src="assets/host.js"></script>' : ''}
+    ${body.includes('data-scene') ? '<script type="module" src="assets/home.js"></script>' : ''}
   </body>
 </html>
 `;
@@ -470,7 +530,9 @@ for (const page of pages) {
   const body =
     page.key === 'index'
       ? read('site/home.html').replace('<!-- stage -->', stage).replace('<!-- version -->', version)
-      : `<article class="prose">\n${render(page)}\n</article>`;
+      : page.key === 'components' || page.parent === 'components'
+        ? `<div class="with-menu">\n${componentMenu(page)}\n<article class="prose">\n${render(page)}\n</article>\n</div>`
+        : `<article class="prose">\n${render(page)}\n</article>`;
   write(`${page.key}.html`, layout(page, body));
   write(`${page.key}.md`, markdownFor(page) + '\n');
 }

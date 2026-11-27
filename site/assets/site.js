@@ -52,3 +52,32 @@ for (const pre of document.querySelectorAll('pre')) {
 
 // A browser driven by a program announces itself: make the line for agents hard to miss
 if (navigator.webdriver) document.querySelector('.for-agents')?.classList.add('is-agent');
+
+// Tabs (Preview / Code on the pages of the components). The markup shows both parts; this turns them into tabs.
+for (const [n, group] of [...document.querySelectorAll('[data-tabs]')].entries()) {
+  const list = group.querySelector('[role="tablist"]');
+  const tabs = [...list.querySelectorAll('[role="tab"]')];
+  const panels = [...group.querySelectorAll(':scope > [role="tabpanel"]')];
+  const select = (index, focus = false) => {
+    tabs.forEach((tab, i) => {
+      const on = i === index;
+      tab.setAttribute('aria-selected', String(on));
+      tab.tabIndex = on ? 0 : -1;
+      panels[i].hidden = !on;
+      if (on && focus) tab.focus();
+    });
+  };
+  tabs.forEach((tab, i) => {
+    tab.id = `tab-${n}-${i}`;
+    panels[i].id = `panel-${n}-${i}`;
+    tab.setAttribute('aria-controls', panels[i].id);
+    panels[i].setAttribute('aria-labelledby', tab.id);
+    tab.addEventListener('click', () => select(i));
+    tab.addEventListener('keydown', (event) => {
+      const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+      if (step) select((i + step + tabs.length) % tabs.length, true);
+    });
+  });
+  list.hidden = false;
+  select(0);
+}

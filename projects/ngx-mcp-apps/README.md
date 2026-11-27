@@ -1,5 +1,10 @@
 # ngx-mcp-apps
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/umb0o/ngx-mcp-apps/main/docs/demo.gif" width="420"
+    alt="An assistant answers three questions with small apps inside the chat: a packing list to tick, a sales chart, a table booking." />
+</p>
+
 > Unofficial community library. Not affiliated with or endorsed by Anthropic, OpenAI or the Model Context Protocol project.
 
 An [MCP App](https://modelcontextprotocol.io/seps/1865-mcp-apps-interactive-user-interfaces-for-mcp) is a small web

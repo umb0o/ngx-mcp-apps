@@ -72,6 +72,25 @@
           }
         }
       }
+    },
+    "gallery": {
+      "projectType": "application",
+      "root": "projects/gallery",
+      "sourceRoot": "projects/gallery/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/gallery",
+            "browser": "projects/gallery/src/main.ts",
+            "index": "projects/gallery/src/index.html",
+            "tsConfig": "projects/gallery/tsconfig.app.json",
+            "singleFile": "dist/gallery.html",
+            "outputHashing": "none"
+          }
+        }
+      }
     }
   }
 }

@@ -84,6 +84,34 @@ async function createServer() {
     },
   );
 
+  // A normal tool the model calls in a later turn. The open app is not told: it follows `read_list`.
+  server.registerTool(
+    'add_items',
+    {
+      description: 'Adds several items to the packing list that is already shown.',
+      inputSchema: { items: z.array(z.string().min(1)) },
+    },
+    async ({ items }) => {
+      list.items.push(...items);
+      changes++;
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Added ${items.length} items. The list on screen updates by itself.`,
+          },
+        ],
+      };
+    },
+  );
+
+  registerAppTool(
+    server,
+    'read_list',
+    { description: 'The list as it is now.', inputSchema: {}, _meta: appOnly },
+    async () => ({ content: [], structuredContent: list }),
+  );
+
   registerAppTool(
     server,
     'read_counter',
@@ -114,8 +142,9 @@ app.listen(3000, () => console.log('MCP server on http://localhost:3000/mcp'));
 
 `zod` describes the arguments of a tool; the MCP SDK installs it.
 
-These are the three tools the [example](example.html) calls: `show_packing_list` opens it, `add_item` and
-`read_counter` are called by the page.
+These are the tools of the [example](example.html): `show_packing_list` opens the app; `add_item`, `read_list` and
+`read_counter` are called by the page; `add_items` is called by the model in a later turn, and the open app picks
+up the change through `read_list`.
 
 ## Connect it to a chat host
 

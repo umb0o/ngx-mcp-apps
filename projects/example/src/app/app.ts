@@ -2,7 +2,7 @@
  * The example: a packing list the model opens with a tool call.
  * It uses every copy-and-paste component of ./components.
  */
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
 import { McpApp, McpCallToolResult, isObject } from 'ngx-mcp-apps';
 import { McpCallTool } from './components/mcp-call-tool';
 import { McpFullscreenButton } from './components/mcp-fullscreen-button';
@@ -142,9 +142,13 @@ export class App {
 
   /** The list as the tool call that opened the app returned it. */
   private readonly opened = this.mcp.structuredContentAs(isPackingList);
-  /** The list after the last change made from this page. */
-  private readonly changed = signal<PackingList | undefined>(undefined);
-  protected readonly list = computed(() => this.changed() ?? this.opened());
+  /**
+   * The list as it is on the server now. The app stays open while the conversation goes on: when the model
+   * changes the list in a later turn, by calling another tool of the server, the app sees it here.
+   */
+  private readonly followed = this.mcp.pollServerTool('read_list', { guard: isPackingList });
+  /** What is shown: the latest from the server, or at once what a change made from this page returned. */
+  protected readonly list = linkedSignal(() => this.followed() ?? this.opened());
   protected readonly problem = signal('');
   /** What is typed in the box: a signal, so the arguments of the button are up to date at the click. */
   protected readonly text = signal('');
@@ -152,6 +156,6 @@ export class App {
   protected added(result: McpCallToolResult): void {
     this.problem.set('');
     this.text.set('');
-    if (isPackingList(result.structuredContent)) this.changed.set(result.structuredContent);
+    if (isPackingList(result.structuredContent)) this.list.set(result.structuredContent);
   }
 }
