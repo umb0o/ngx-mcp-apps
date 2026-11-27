@@ -566,8 +566,12 @@ function markdownFor(page) {
 
 // ---------------------------------------------------------------- HTML
 
+const SHIKI_CONTRAST = {
+  light: { '#D73A49': '#CF222E', '#6A737D': '#59636E', '#E36209': '#BC4C00', '#22863A': '#116329' },
+  dark: { '#6A737D': '#9198A1', '#8B949E': '#9198A1' },
+};
 const highlighter = await createHighlighter({
-  themes: ['poimandres'],
+  themes: ['github-light', 'github-dark'],
   langs: ['ts', 'js', 'json', 'bash', 'html', 'css'],
 });
 
@@ -645,8 +649,16 @@ function render(page) {
         if (!known) return `<pre><code>${escapeHtml(text)}</code></pre>\n`;
         // The comment colour of the theme is too faint on its background (WCAG 1.4.3): a lighter one
         return highlighter
-          .codeToHtml(text, { lang, theme: 'poimandres' })
-          .replace(/color:#767C9DB0/gi, 'color:#9AA3C4');
+          .codeToHtml(text, {
+            lang,
+            themes: { light: 'github-light', dark: 'github-dark' },
+            defaultColor: false,
+          })
+          .replace(/--shiki-(light|dark):(#[0-9A-Fa-f]{6,8})/g, (m, mode, colour) => {
+            // A few colours of the two themes are below 4.5:1 on our code background (WCAG 1.4.3)
+            const better = SHIKI_CONTRAST[mode][colour.toUpperCase()];
+            return better ? `--shiki-${mode}:${better}` : m;
+          });
       },
       table(token) {
         // Wide tables scroll on their own instead of widening the page
@@ -838,7 +850,7 @@ function layout(page, body, { description, faq = [] }) {
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23b80f4a'/%3E%3Crect x='3' y='4' width='10' height='8' rx='1.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@400..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="${asset(root, 'site.css')}" />
   </head>
   <body class="page-${page.key}">

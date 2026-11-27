@@ -6,35 +6,44 @@
    Two colours carry meaning and are used for nothing else: raspberry is the app speaking,
    teal is the host speaking. Buttons and navigation use ink. */
 :root {
-  --bg: #f1f3ef;
-  --surface: #fbfcfa;
-  --ink: #0f1f1c;
-  --muted: #4d5c57;
-  --line: #cdd5cf;
-  --app: #b80f4a;
-  --host: #006a70;
-  /* The dark panels, the same idea in both themes */
-  --pit: #0f1f1c;
-  --pit-ink: #e6eeea;
-  --pit-muted: #9db2ac;
-  --pit-line: #2a443f;
-  --app-lit: #ff86ab;
-  --host-lit: #55d6ca;
-  --display: 'Geist', 'Segoe UI', system-ui, sans-serif;
-  --body: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --ink: #1f2328;
+  --muted: #59636e;
+  --line: #d1d9e0;
+  --app: #6639ba;
+  --host: #08664d;
+  --accent: #6639ba;
+  --code-bg: #f6f8fa;
+  /* The dark panels: the protocol log, the developer block */
+  --pit: #0d1117;
+  --pit-ink: #e6edf3;
+  --pit-muted: #9198a1;
+  --pit-line: #30363d;
+  --app-lit: #c297ff;
+  --host-lit: #56d4b0;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(31, 35, 40, 0.06), 0 3px 12px rgba(31, 35, 40, 0.06);
+  --shadow-lg: 0 8px 24px rgba(31, 35, 40, 0.12), 0 2px 6px rgba(31, 35, 40, 0.06);
+  --display: 'Mona Sans', 'Segoe UI', system-ui, sans-serif;
+  --body: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   color-scheme: light;
 }
 :root[data-theme='dark'] {
-  --bg: #0b1514;
-  --surface: #121f1d;
-  --ink: #e6eeea;
-  --muted: #9db2ac;
-  --line: #26393a;
-  --app: #ff86ab;
-  --host: #55d6ca;
-  --pit: #060d0c;
-  --pit-line: #223633;
+  --bg: #0d1117;
+  --surface: #151b23;
+  --ink: #f0f6fc;
+  --muted: #9198a1;
+  --line: #30363d;
+  --app: #b392f0;
+  --host: #56d4b0;
+  --accent: #b392f0;
+  --code-bg: #151b23;
+  --pit: #010409;
+  --pit-line: #262c36;
+  --shadow: 0 0 0 1px rgba(240, 246, 252, 0.04), 0 3px 12px rgba(1, 4, 9, 0.6);
+  --shadow-lg: 0 0 0 1px rgba(240, 246, 252, 0.05), 0 12px 32px rgba(1, 4, 9, 0.7);
   color-scheme: dark;
 }
 
@@ -213,7 +222,7 @@ h3 {
   letter-spacing: -0.02em;
   margin: 3.5rem 0 0.85rem;
   padding-top: 1.4rem;
-  border-top: 1.5px solid var(--ink);
+  border-top: 1px solid var(--line);
 }
 .prose h3 {
   font-size: 1.14rem;
@@ -314,7 +323,7 @@ td {
 th {
   font-weight: 700;
   padding-bottom: 0.45rem;
-  border-bottom: 1.5px solid var(--ink);
+  border-bottom: 1px solid var(--line);
 }
 td:first-child code {
   white-space: nowrap;
@@ -364,17 +373,17 @@ td:first-child code {
   min-width: 0;
 }
 .chatwin {
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface);
-  box-shadow: 0.45rem 0.45rem 0 var(--ink);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   font-size: 0.94rem;
   line-height: 1.45;
 }
 :root[data-theme='dark'] .chatwin {
   border-color: var(--muted);
-  box-shadow: 0.45rem 0.45rem 0 var(--pit);
+  box-shadow: var(--shadow-lg);
 }
 .chatwin-head {
   display: flex;
@@ -421,7 +430,7 @@ td:first-child code {
 }
 .card {
   padding: 0.95rem 1rem 1rem;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg);
 }
@@ -478,7 +487,7 @@ td:first-child code {
   flex: none;
   width: 1.05rem;
   height: 1.05rem;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: 4px;
   background: transparent center / 0.8rem no-repeat;
 }
@@ -550,7 +559,7 @@ td:first-child code {
 }
 .bar b {
   padding-top: 0.3rem;
-  border-top: 1.5px solid var(--ink);
+  border-top: 1px solid var(--line);
   font-size: 0.74rem;
   font-weight: 500;
   color: var(--muted);
@@ -576,7 +585,7 @@ td:first-child code {
 }
 .slots span {
   padding: 0.5rem 0;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: 8px;
   text-align: center;
   font-weight: 600;
@@ -633,7 +642,7 @@ td:first-child code {
   gap: 0.6rem;
   margin: 0.9rem 1rem 1rem;
   padding: 0.4rem 0.4rem 0.4rem 0.95rem;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: 2rem;
   background: var(--bg);
 }
@@ -777,7 +786,7 @@ td:first-child code {
   padding: 0 1.3rem;
   min-height: 3rem;
   border-radius: 8px;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   background: var(--ink);
   color: var(--bg);
   font-weight: 650;
@@ -802,7 +811,7 @@ td:first-child code {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   margin: 0 0 2rem;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
   overflow: hidden;
@@ -867,7 +876,7 @@ td:first-child code {
   cursor: pointer;
   padding: 0.3rem 0.8rem;
   border-radius: 99px;
-  border: 1.5px solid var(--host);
+  border: 1px solid color-mix(in srgb, var(--host) 50%, var(--line));
   background: transparent;
   color: var(--ink);
 }
@@ -883,7 +892,7 @@ td:first-child code {
   cursor: pointer;
   padding: 0.4rem 0.95rem;
   border-radius: 99px;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   background: var(--ink);
   color: var(--bg);
   font-weight: 600;
@@ -899,7 +908,7 @@ td:first-child code {
 .frame {
   position: relative;
   margin-top: 0.45rem;
-  border: 1.5px dashed var(--app);
+  border: 1px dashed color-mix(in srgb, var(--app) 55%, var(--line));
   border-radius: 10px;
   background: var(--bg);
 }
@@ -1106,7 +1115,7 @@ td:first-child code {
 }
 .uses-list div {
   padding-top: 1rem;
-  border-top: 1.5px solid var(--ink);
+  border-top: 1px solid var(--line);
 }
 .uses-list h3 {
   margin: 0 0 0.5rem;
@@ -1324,7 +1333,7 @@ td:first-child code {
   list-style: none;
   margin: 0 0 1.5rem;
   padding: 0;
-  border-top: 1.5px solid var(--ink);
+  border-top: 1px solid var(--line);
 }
 .prose .pick li {
   margin: 0;
@@ -1385,7 +1394,7 @@ td:first-child code {
   top: 1.5rem;
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
-  border-left: 1.5px solid var(--line);
+  border-left: 1px solid var(--line);
 }
 .menu ul,
 .menu-fold ul {
@@ -1416,7 +1425,7 @@ td:first-child code {
 .menu-fold {
   display: none;
   margin: 0 0 1.5rem;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
 }
@@ -1460,7 +1469,7 @@ td:first-child code {
   display: flex;
   gap: 0.25rem;
   margin: 0 0 1rem;
-  border-bottom: 1.5px solid var(--ink);
+  border-bottom: 1px solid var(--line);
 }
 .tablist[hidden] {
   display: none;
@@ -1585,7 +1594,7 @@ td:first-child code {
 .pager .to-next {
   grid-column: 2;
   text-align: right;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
 }
 .pager .to-next strong {
   font-size: 1.15rem;
@@ -1715,7 +1724,7 @@ td:first-child code {
 /* The messages between the app and the host, folded */
 details.wire {
   display: block;
-  border-top: 1.5px solid var(--ink);
+  border-top: 1px solid var(--line);
 }
 :root[data-theme='dark'] details.wire {
   border-top-color: var(--pit-line);
@@ -1770,4 +1779,182 @@ details.wire ol {
 }
 main:focus {
   outline: none;
+}
+
+/* ---------------------------------------------------------------- refined theme
+   Calm surfaces, 1px lines, soft depth, one violet accent, Mona Sans. */
+body {
+  font-size: 1rem;
+  line-height: 1.6;
+  font-feature-settings: 'ss01';
+}
+h1,
+h2,
+h3 {
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+a {
+  text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1px;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: inherit;
+}
+
+/* Navigation: quiet, the current page marked by a soft fill and a bar */
+.side nav a[aria-current='page'] {
+  position: relative;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+}
+.side nav a[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: -0.55rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.side-foot button {
+  border-color: var(--line);
+  border-radius: 6px;
+}
+.side-foot button:hover {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+/* Code: light on light, dark on dark, like the rest of the page */
+pre {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--code-bg) !important;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+}
+:root[data-theme='dark'] .shiki,
+:root[data-theme='dark'] .shiki span {
+  color: var(--shiki-dark);
+}
+pre :focus-visible {
+  outline-color: var(--accent);
+}
+.copy {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+}
+.copy:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+:not(pre) > code {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  border-radius: 6px;
+}
+
+/* Buttons: the primary one solid, the others outlined */
+.go {
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+.go.quiet {
+  box-shadow: none;
+}
+
+/* The home: a soft glow behind the hero, the chat window floating */
+.hero {
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: -6rem -10rem auto auto;
+  width: 46rem;
+  height: 32rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side, color-mix(in srgb, var(--accent) 22%, transparent), transparent),
+    radial-gradient(
+      closest-side at 30% 70%,
+      color-mix(in srgb, var(--host) 14%, transparent),
+      transparent
+    );
+  filter: blur(20px);
+}
+.chatwin {
+  border-radius: 16px;
+}
+.dev {
+  border-radius: 16px;
+  border: 1px solid var(--pit-line);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Cards and boxes: one radius, one line, soft depth */
+.stage {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.pager a {
+  border-radius: 10px;
+  border-color: var(--line);
+}
+.pager a:hover,
+.pager a:focus-visible {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  color: var(--ink);
+}
+.pager .to-next {
+  border-color: var(--line);
+}
+.pager .to-next:hover span {
+  color: var(--muted);
+}
+.pager .to-next strong {
+  color: var(--ink);
+}
+.prose h2 {
+  border-top-color: var(--line);
+}
+.chatwin,
+:root[data-theme='dark'] .chatwin {
+  border-color: var(--line);
+  box-shadow: var(--shadow-lg);
+}
+@media (max-width: 60rem) {
+  /* On a phone the navigation is a row: the bar of the current page goes under it */
+  .side nav a[aria-current='page']::before {
+    left: 0.65rem;
+    right: 0.65rem;
+    top: auto;
+    bottom: -0.05rem;
+    width: auto;
+    height: 2px;
+  }
+}
+/* The glow behind the hero is decoration: it never widens the page */
+main {
+  overflow-x: clip;
 }
