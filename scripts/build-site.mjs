@@ -164,6 +164,8 @@ const LOCALE = { en: 'en_US', it: 'it_IT' };
 const UI = {
   en: {
     langName: 'English',
+    forAgentsLabel: 'For AI agents',
+    skip: 'Skip to content',
     switchTo: 'Leggi in italiano',
     homeTitle: 'ngx-mcp-apps: Angular MCP Apps, agentic apps inside the chat',
     description:
@@ -205,6 +207,8 @@ const UI = {
   },
   it: {
     langName: 'Italiano',
+    forAgentsLabel: 'Per gli agenti AI',
+    skip: 'Vai al contenuto',
     switchTo: 'Read in English',
     homeTitle: 'ngx-mcp-apps: MCP App con Angular, app agentiche dentro la chat',
     description:
@@ -560,6 +564,7 @@ const highlighter = await createHighlighter({
 const STAGE_WORDS = {
   it: [
     ['Messages between the app and the host', 'Messaggi tra app e host'],
+    ['aria-label="Conversation"', 'aria-label="Conversazione"'],
     ['Added to the model context', 'Aggiunto al contesto del modello'],
     ['<span class="stage-title">Preview</span>', '<span class="stage-title">Anteprima</span>'],
     ['Run again', 'Riavvia'],
@@ -624,7 +629,10 @@ function render(page) {
       code({ text, lang }) {
         const known = highlighter.getLoadedLanguages().includes(lang);
         if (!known) return `<pre><code>${escapeHtml(text)}</code></pre>\n`;
-        return highlighter.codeToHtml(text, { lang, theme: 'poimandres' });
+        // The comment colour of the theme is too faint on its background (WCAG 1.4.3): a lighter one
+        return highlighter
+          .codeToHtml(text, { lang, theme: 'poimandres' })
+          .replace(/color:#767C9DB0/gi, 'color:#9AA3C4');
       },
       table(token) {
         // Wide tables scroll on their own instead of widening the page
@@ -820,9 +828,10 @@ function layout(page, body, { description, faq = [] }) {
     <link rel="stylesheet" href="${root}assets/site.css" />
   </head>
   <body class="page-${page.key}">
-    <p class="for-agents">
+    <a class="skip" href="#content">${t.skip}</a>
+    <aside class="for-agents" aria-label="${t.forAgentsLabel}">
       ${t.forAgents(`${page.key}.md`, root)}
-    </p>
+    </aside>
     <div class="shell">
       <header class="side">
         <a class="brand" href="${href('index')}">ngx-mcp-apps <span>${version}</span></a>
@@ -838,7 +847,7 @@ function layout(page, body, { description, faq = [] }) {
           <button type="button" data-theme-toggle>${t.darkTheme}</button>
         </div>
       </header>
-      <main>
+      <main id="content" tabindex="-1">
 ${body}
 ${pager(page)}
       </main>

@@ -19,12 +19,19 @@
     <p class="context" data-context hidden aria-live="polite">
       <span class="label">Added to the model context</span> <span data-context-text></span>
     </p>
-    <div class="conversation" data-chat-extra aria-live="polite"></div>
+    <div
+      class="conversation"
+      data-chat-extra
+      aria-live="polite"
+      tabindex="0"
+      role="region"
+      aria-label="Conversation"
+    ></div>
     <div class="rounds" data-rounds></div>
   </div>
   <details class="wire">
     <summary>Messages between the app and the host</summary>
     <p class="ends" aria-hidden="true"><span>app</span><span>host</span></p>
-    <ol data-log></ol>
+    <ol data-log tabindex="0" aria-label="Messages between the app and the host"></ol>
   </details>
 </section>

@@ -20,7 +20,7 @@ ng add ngx-mcp-apps-builder
 It installs the builder as a dev dependency, adds the [ngx-mcp-apps](https://www.npmjs.com/package/ngx-mcp-apps)
 library and switches the `build` target of your application to this builder.
 
-| Option           |                                                                              |
+| Option           | What it does                                                                 |
 | ---------------- | ---------------------------------------------------------------------------- |
 | `--project`      | The application to set up. Needed only when the workspace has more than one. |
 | `--single-file`  | Path of the HTML file. Default: `dist/<project>.html`.                       |
