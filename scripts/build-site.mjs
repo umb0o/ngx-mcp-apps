@@ -15,6 +15,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, posix, resolve } from 'node:path';
 import { Marked } from 'marked';
 import { createHighlighter } from 'shiki';
@@ -58,6 +59,19 @@ cpSync('dist/security.html', `${out}/example/security.html`);
 cpSync('site/assets', `${out}/assets`, { recursive: true });
 cpSync('site/skill', `${out}/skill`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
+
+// A browser keeps a stylesheet or a script for a while: the address of each one carries a hash of its content, so a
+// new version of the site is never shown with the old styles
+const ASSET_VERSION = Object.fromEntries(
+  ['site.css', 'site.js', 'host.js', 'home.js'].map((name) => [
+    name,
+    createHash('sha256')
+      .update(readFileSync(`site/assets/${name}`))
+      .digest('hex')
+      .slice(0, 10),
+  ]),
+);
+const asset = (root, name) => `${root}assets/${name}?v=${ASSET_VERSION[name]}`;
 
 // ---------------------------------------------------------------- sources
 
@@ -825,7 +839,7 @@ function layout(page, body, { description, faq = [] }) {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="${root}assets/site.css" />
+    <link rel="stylesheet" href="${asset(root, 'site.css')}" />
   </head>
   <body class="page-${page.key}">
     <a class="skip" href="#content">${t.skip}</a>
@@ -852,9 +866,9 @@ ${body}
 ${pager(page)}
       </main>
     </div>
-    <script type="module" src="${root}assets/site.js"></script>
-    ${body.includes('data-host') ? `<script type="module" src="${root}assets/host.js"></script>` : ''}
-    ${body.includes('data-scene') ? `<script type="module" src="${root}assets/home.js"></script>` : ''}
+    <script type="module" src="${asset(root, 'site.js')}"></script>
+    ${body.includes('data-host') ? `<script type="module" src="${asset(root, 'host.js')}"></script>` : ''}
+    ${body.includes('data-scene') ? `<script type="module" src="${asset(root, 'home.js')}"></script>` : ''}
   </body>
 </html>
 `;
@@ -942,7 +956,7 @@ write(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Page not found · ngx-mcp-apps</title>
     <meta name="robots" content="noindex" />
-    <link rel="stylesheet" href="/ngx-mcp-apps/assets/site.css" />
+    <link rel="stylesheet" href="/ngx-mcp-apps/assets/site.css?v=${ASSET_VERSION['site.css']}" />
   </head>
   <body>
     <main style="max-width: 40rem; margin: 4rem auto; padding: 0 1.25rem">
