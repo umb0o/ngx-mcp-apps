@@ -4,8 +4,9 @@
  * Follows the light or dark theme of the host. It writes `data-theme` on the `<html>` element, so your
  * stylesheet can react with `:root[data-theme='dark'] { ... }`, and sets `color-scheme` there too. That
  * second part matters: when the colour scheme of your page differs from the one of the host, the browser
- * paints the frame white instead of leaving it transparent. Keep the page background transparent: the
- * host draws it.
+ * paints the frame white instead of leaving it transparent. It also copies the style variables the host
+ * sends (colours, fonts) to the `<html>` element, so your CSS can use them with a fallback:
+ * `color: var(--color-text-primary, #16203a)`. Keep the page background transparent: the host draws it.
  *
  * Usage: add `McpTheme` to the `hostDirectives` of your root component, or put `mcpTheme` on any element.
  */
@@ -27,6 +28,20 @@ export class McpTheme {
       if (theme) root.setAttribute('data-theme', theme);
       else root.removeAttribute('data-theme');
       root.style.colorScheme = theme ?? 'light dark';
+    });
+
+    // The style variables of the host, as they come. The ones of the previous context are removed first
+    let applied: string[] = [];
+    effect(() => {
+      const variables = mcp.hostContext()?.styles?.variables ?? {};
+      for (const name of applied) root.style.removeProperty(name);
+      applied = [];
+      for (const [name, value] of Object.entries(variables)) {
+        if (name.startsWith('--') && typeof value === 'string' && value) {
+          root.style.setProperty(name, value);
+          applied.push(name);
+        }
+      }
     });
   }
 }

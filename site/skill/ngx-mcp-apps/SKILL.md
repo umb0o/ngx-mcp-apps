@@ -60,14 +60,19 @@ Source of every copy-and-paste component: https://umb0o.github.io/ngx-mcp-apps/c
 - **No lazy loading.** No `loadComponent`, `loadChildren`, `@defer`, dynamic `import()` or web workers: one HTML
   file cannot fetch other chunks, and the build fails. Use static imports.
 - **Router:** if a router is needed, use `provideRouter(routes, withHashLocation())`. The iframe URL is not the
-  app's.
+  app's. A complete example, with the model choosing the first view: https://umb0o.github.io/ngx-mcp-apps/routing.md
+- **Colour scheme:** set `color-scheme` on the document root from `mcp.theme()`
+  (`document.documentElement.style.colorScheme = mcp.theme() ?? 'light dark'` in an `effect`), never only on a
+  component: a frame whose colour scheme differs from the page around it gets an opaque white background. More:
+  https://umb0o.github.io/ngx-mcp-apps/theme.md
 - **Background:** keep `body { background: transparent }`. The host draws the background. Follow the host theme
   with `mcp.theme()` (`'light' | 'dark' | undefined`).
 - **Images in templates** (`<img src="logo.svg">`) are not embedded. Use a `data:` URL, an absolute `https://` URL
   whose domain the server declares in `_meta.ui.csp.resourceDomains`, or a CSS `url(...)`, which the builder
   embeds.
 - **`localStorage` may be unavailable** in the sandbox: wrap it in `try/catch`; keep real state on the server.
-- **Render tool data with `{{ }}`**, never with `[innerHTML]`: it comes from the model.
+- **Render tool data with `{{ }}`**, never with `[innerHTML]`: it comes from the model. The checklist and a
+  guard to copy: https://umb0o.github.io/ngx-mcp-apps/security.md
 - **`pollServerTool` needs an injection context:** call it in a field initializer or the constructor, or pass
   `{ injector }`.
 - **Host calls reject when not connected.** `callServerTool`, `updateModelContext`, `sendMessage`,
@@ -117,7 +122,7 @@ dependency than `ngx-mcp-apps`. Fetch the source from
 | File                       | What it is                                                                                                |
 | -------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `mcp-status.ts`            | `<mcp-status />`: badge with the connection status                                                        |
-| `mcp-theme.ts`             | `mcpTheme` directive: writes `data-theme` on `<html>` from the host theme                                 |
+| `mcp-theme.ts`             | `mcpTheme` directive: writes `data-theme`, `color-scheme` and the host style variables on `<html>`        |
 | `mcp-tool-state.ts`        | `<mcp-tool-state>`: shows its content when the tool result arrived, otherwise waiting, cancelled or error |
 | `mcp-call-tool.ts`         | `button[mcpCallTool]`: calls a server tool on click, disabled while pending                               |
 | `mcp-live-value.ts`        | pattern for `pollServerTool` with a guard                                                                 |

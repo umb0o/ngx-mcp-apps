@@ -41,12 +41,16 @@ symlinkSync(resolve('dist/ngx-mcp-apps-builder'), link, 'junction');
 execSync('npx ng build example', { stdio: 'inherit' });
 execSync('npx ng build one-file', { stdio: 'inherit' });
 execSync('npx ng build gallery', { stdio: 'inherit' });
+execSync('npx ng build routing', { stdio: 'inherit' });
+execSync('npx ng build security', { stdio: 'inherit' });
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync('dist/example.html', `${out}/example/app.html`);
 cpSync('dist/one-file.html', `${out}/example/one-file.html`);
 cpSync('dist/gallery.html', `${out}/example/gallery.html`);
+cpSync('dist/routing.html', `${out}/example/routing.html`);
+cpSync('dist/security.html', `${out}/example/security.html`);
 cpSync('site/assets', `${out}/assets`, { recursive: true });
 cpSync('site/skill', `${out}/skill`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
@@ -250,6 +254,28 @@ const pages = [
       take('Following the model while the app is open', 'Checking your own data'),
   },
   {
+    key: 'routing',
+    nav: 'Routing',
+    title: 'Routing',
+    markdown: withSources(read('site/pages/routing.md')),
+  },
+  {
+    key: 'security',
+    nav: 'Security',
+    title: 'Security',
+    // The checklist stays in the README, its one source: here it follows the live example
+    markdown: withSources(read('site/pages/security.md')).replace(
+      '<!-- checklist -->',
+      take('Security').replace(/^## Security\n+/, ''),
+    ),
+  },
+  {
+    key: 'theme',
+    nav: 'Theme',
+    title: 'Theme',
+    markdown: read('site/pages/theme.md'),
+  },
+  {
     key: 'components',
     nav: 'Components',
     title: 'Components',
@@ -279,8 +305,7 @@ const pages = [
     key: 'reference',
     nav: 'Reference',
     title: 'Reference',
-    markdown:
-      '# Reference\n\n' + take('API', 'Configuration', 'Security', 'Compatibility', 'Limits'),
+    markdown: '# Reference\n\n' + take('API', 'Configuration', 'Compatibility', 'Limits'),
   },
   {
     key: 'agents',
@@ -383,7 +408,11 @@ const highlighter = await createHighlighter({
 });
 
 const stageTemplate = read('site/stage.html');
-const stageFor = (app) => stageTemplate.replaceAll('APP_URL', `example/${app}.html`);
+/** The stage of an application of dist/site/example. Its name is also the scenario host.js plays for it. */
+const stageFor = (app) =>
+  stageTemplate
+    .replaceAll('APP_URL', `example/${app}.html`)
+    .replace('data-host', `data-host data-scenario="${app}"`);
 const stage = stageFor('app');
 /** `<!-- stage -->` is the example, `<!-- stage: name -->` another application of dist/site/example. */
 const previewTemplate = read('site/preview.html');
@@ -417,7 +446,7 @@ function render(page) {
       heading({ tokens, depth }) {
         const html = this.parser.parseInline(tokens);
         const id = slug(html);
-        if (depth === 1) return `<h1>${html}</h1>\n`;
+        if (depth === 1) return `<h1 id="${id}">${html}</h1>\n`;
         return `<h${depth} id="${id}"><a class="anchor" href="#${id}">${html}</a></h${depth}>\n`;
       },
       link({ href, tokens }) {

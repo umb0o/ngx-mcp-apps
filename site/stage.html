@@ -1,7 +1,7 @@
 <section class="stage" data-host aria-label="Live example">
   <div class="chat">
-    <p class="bubble user">What should I pack for Lisbon?</p>
-    <p class="toolcall">The model calls the tool <code>show_packing_list</code></p>
+    <p class="bubble user" data-ask>What should I pack for Lisbon?</p>
+    <p class="toolcall">The model calls the tool <code data-tool>show_packing_list</code></p>
     <div class="frame" data-frame>
       <!-- host.js sets the address once it listens: the app speaks first, as soon as it loads -->
       <iframe data-src="APP_URL" title="The example application"></iframe>
@@ -11,6 +11,7 @@
         </p></noscript
       >
     </div>
+    <div class="actions-row" data-actions></div>
     <div data-chat-extra aria-live="polite"></div>
     <div class="rounds" data-rounds></div>
   </div>

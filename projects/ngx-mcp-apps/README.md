@@ -206,7 +206,8 @@ note = this.mcp.pollServerTool('read_note', { guard: isNote }); // Signal<Note |
 opened = this.mcp.structuredContentAs(isNote); // Signal<Note | undefined>
 ```
 
-Invalid values are dropped and logged; the signal keeps the last valid one.
+With `pollServerTool`, an invalid value is dropped and logged, and the signal keeps the last valid one.
+`structuredContentAs` is `undefined` while the result of the tool call does not pass the guard.
 
 ## API
 

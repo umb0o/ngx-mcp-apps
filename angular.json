@@ -110,6 +110,44 @@
           }
         }
       }
+    },
+    "routing": {
+      "projectType": "application",
+      "root": "projects/routing",
+      "sourceRoot": "projects/routing/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/routing",
+            "browser": "projects/routing/src/main.ts",
+            "index": "projects/routing/src/index.html",
+            "tsConfig": "projects/routing/tsconfig.app.json",
+            "singleFile": "dist/routing.html",
+            "outputHashing": "none"
+          }
+        }
+      }
+    },
+    "security": {
+      "projectType": "application",
+      "root": "projects/security",
+      "sourceRoot": "projects/security/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/security",
+            "browser": "projects/security/src/main.ts",
+            "index": "projects/security/src/index.html",
+            "tsConfig": "projects/security/tsconfig.app.json",
+            "singleFile": "dist/security.html",
+            "outputHashing": "none"
+          }
+        }
+      }
     }
   }
 }

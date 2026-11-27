@@ -861,6 +861,38 @@ td:first-child code {
 .rounds:empty {
   display: none;
 }
+/* What the page can make the host do: a scenario of host.js fills it */
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.86rem;
+  color: var(--host);
+}
+.actions-row:empty {
+  display: none;
+}
+.actions-row span {
+  flex-basis: 100%;
+  font-weight: 600;
+}
+.actions-row button {
+  cursor: pointer;
+  padding: 0.3rem 0.8rem;
+  border-radius: 99px;
+  border: 1.5px solid var(--host);
+  background: transparent;
+  color: var(--ink);
+}
+.actions-row button[aria-pressed='true'] {
+  background: var(--host);
+  color: var(--surface);
+  font-weight: 600;
+}
+.actions-row button:hover:not([aria-pressed='true']) {
+  background: color-mix(in srgb, var(--host) 14%, transparent);
+}
 .rounds button {
   cursor: pointer;
   padding: 0.4rem 0.95rem;
@@ -952,8 +984,10 @@ td:first-child code {
   gap: 0.75rem;
   padding: 1rem 1.1rem 0.9rem;
 }
-.wire h2 {
+.stage .wire h2 {
   margin: 0;
+  padding: 0;
+  border: 0;
   font-size: 1rem;
   font-weight: 700;
   font-stretch: 112%;
