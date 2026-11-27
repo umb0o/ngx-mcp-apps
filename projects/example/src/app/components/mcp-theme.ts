@@ -2,8 +2,10 @@
  * Host theme
  *
  * Follows the light or dark theme of the host. It writes `data-theme` on the `<html>` element, so your
- * stylesheet can react with `:root[data-theme='dark'] { ... }`. Keep the page background transparent:
- * the host draws it.
+ * stylesheet can react with `:root[data-theme='dark'] { ... }`, and sets `color-scheme` there too. That
+ * second part matters: when the colour scheme of your page differs from the one of the host, the browser
+ * paints the frame white instead of leaving it transparent. Keep the page background transparent: the
+ * host draws it.
  *
  * Usage: add `McpTheme` to the `hostDirectives` of your root component, or put `mcpTheme` on any element.
  */
@@ -24,6 +26,7 @@ export class McpTheme {
       // No theme from the host (or standalone): leave the choice to the browser
       if (theme) root.setAttribute('data-theme', theme);
       else root.removeAttribute('data-theme');
+      root.style.colorScheme = theme ?? 'light dark';
     });
   }
 }

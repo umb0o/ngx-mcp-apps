@@ -9,7 +9,7 @@
  *
  * Usage: save it as `src/main.ts` of a new Angular 22 application, then `ng add ngx-mcp-apps-builder` and `ng build`.
  */
-import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Component, computed, effect, inject, linkedSignal, signal } from '@angular/core';
 import { FormField, FormRoot, form, maxLength, required } from '@angular/forms/signals';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { McpApp, isObject, provideMcpApp } from 'ngx-mcp-apps';
@@ -30,8 +30,6 @@ const isCounter = (v: unknown): v is { value: number } =>
 @Component({
   selector: 'app-root',
   imports: [FormField, FormRoot],
-  // The host theme when it sends one, otherwise the choice of the browser
-  host: { '[style.color-scheme]': "mcp.theme() ?? 'light dark'" },
   template: `
     @let current = list();
 
@@ -249,6 +247,12 @@ export class App {
       },
     },
   );
+
+  constructor() {
+    // The theme of the host, on the page itself: a frame whose colour scheme differs from the page around it
+    // gets an opaque white background from the browser. With no theme from the host, the browser chooses.
+    effect(() => (document.documentElement.style.colorScheme = this.mcp.theme() ?? 'light dark'));
+  }
 
   protected toggle(item: string): void {
     this.packed.update((set) => {

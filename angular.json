@@ -91,6 +91,25 @@
           }
         }
       }
+    },
+    "chart": {
+      "projectType": "application",
+      "root": "projects/chart",
+      "sourceRoot": "projects/chart/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/chart",
+            "browser": "projects/chart/src/main.ts",
+            "index": "projects/chart/src/index.html",
+            "tsConfig": "projects/chart/tsconfig.app.json",
+            "singleFile": "dist/chart.html",
+            "outputHashing": "none"
+          }
+        }
+      }
     }
   }
 }
