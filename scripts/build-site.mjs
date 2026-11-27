@@ -39,10 +39,12 @@ const link = 'node_modules/ngx-mcp-apps-builder';
 rmSync(link, { recursive: true, force: true });
 symlinkSync(resolve('dist/ngx-mcp-apps-builder'), link, 'junction');
 execSync('npx ng build example', { stdio: 'inherit' });
+execSync('npx ng build one-file', { stdio: 'inherit' });
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync('dist/example.html', `${out}/example/app.html`);
+cpSync('dist/one-file.html', `${out}/example/one-file.html`);
 cpSync('site/assets', `${out}/assets`, { recursive: true });
 cpSync('site/skill', `${out}/skill`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
@@ -93,6 +95,29 @@ const files = readdirSync(componentDir).filter((f) => f.endsWith('.ts'));
 for (const f of files) {
   if (!ORDER.includes(f.replace(/\.ts$/, ''))) throw new Error(`${f} is not listed in ORDER`);
 }
+/** A whole application in one file: compiled as its own project, shown first. */
+const oneFile = (() => {
+  const source = read('projects/one-file/src/main.ts');
+  const lines = /^\/\*\*\n([\s\S]*?)\n \*\//
+    .exec(source)[1]
+    .split('\n')
+    .map((l) => l.replace(/^ \* ?/, ''));
+  mkdirSync(`${out}/components`, { recursive: true });
+  writeFileSync(`${out}/components/one-file-app.ts`, source);
+  return {
+    name: 'one-file-app',
+    file: 'one-file-app.ts',
+    title: lines[0].trim(),
+    usage: lines.find((l) => l.startsWith('Usage: ')).slice(7),
+    description: lines
+      .slice(1)
+      .filter((l) => !l.startsWith('Usage: '))
+      .join('\n')
+      .trim(),
+    source,
+  };
+})();
+
 const components = ORDER.map((name) => {
   const file = `${name}.ts`;
   const source = read(`${componentDir}/${file}`);
@@ -115,7 +140,7 @@ write(
     {
       about:
         'Copy-and-paste Angular components for MCP Apps built with ngx-mcp-apps. Each file is standalone.',
-      components: components.map(({ name, file, title, usage, description }) => ({
+      components: [oneFile, ...components].map(({ name, file, title, usage, description }) => ({
         name,
         title,
         description: description.replace(/\n/g, ' '),
@@ -135,6 +160,21 @@ const componentsMarkdown = components
       `File: [\`${c.file}\`](components/${c.file})\n\n\`\`\`ts\n${c.source.trim()}\n\`\`\``,
   )
   .join('\n\n');
+
+const oneFileMarkdown =
+  `## ${oneFile.title}
+
+${oneFile.description}
+
+<!-- stage: one-file -->
+
+**Usage:** ${oneFile.usage}
+
+` +
+  `File: [\`${oneFile.file}\`](components/${oneFile.file})\n\n` +
+  '```ts\n' +
+  oneFile.source.trim() +
+  '\n```';
 
 /** Replaces `<!-- source: path -->` with the file as a code block. */
 const withSources = (markdown) =>
@@ -185,7 +225,9 @@ const pages = [
     key: 'components',
     nav: 'Components',
     title: 'Components',
-    markdown: read('site/pages/components.md').replace('<!-- components -->', componentsMarkdown),
+    markdown: read('site/pages/components.md')
+      .replace('<!-- components -->', componentsMarkdown)
+      .replace('<!-- one-file -->', oneFileMarkdown),
   },
   {
     key: 'example',
@@ -299,8 +341,8 @@ function markdownFor(page) {
     })
     .join('\n')
     .replace(
-      '<!-- stage -->',
-      `(A live demo is shown here in the HTML page: ${SITE_URL}example.html)`,
+      /<!-- stage(: [\w-]+)? -->/g,
+      `(A live demo is shown here in the HTML page: ${SITE_URL}${page.key}.html)`,
     );
 }
 
@@ -311,7 +353,12 @@ const highlighter = await createHighlighter({
   langs: ['ts', 'js', 'json', 'bash', 'html', 'css'],
 });
 
-const stage = read('site/stage.html');
+const stageTemplate = read('site/stage.html');
+const stageFor = (app) => stageTemplate.replaceAll('APP_URL', `example/${app}.html`);
+const stage = stageFor('app');
+/** `<!-- stage -->` is the example, `<!-- stage: name -->` another application of dist/site/example. */
+const withStages = (html) =>
+  html.replace(/<!-- stage(?:: ([\w-]+))? -->/g, (_, app) => stageFor(app ?? 'app'));
 
 function render(page) {
   const marked = new Marked({
@@ -350,7 +397,7 @@ function render(page) {
       },
     },
   });
-  return marked.parse(page.markdown).replace('<!-- stage -->', stage);
+  return withStages(marked.parse(page.markdown));
 }
 
 const description =

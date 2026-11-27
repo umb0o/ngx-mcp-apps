@@ -102,6 +102,12 @@ Methods of `McpApp`:
 Options of `provideMcpApp`: `name`, `version` (required), `autoResize` (true), `connectTimeout` (4000),
 `requestTimeout` (60000), `log` (false), `allowedOrigins`, `port`.
 
+## Start from a complete app
+
+`https://umb0o.github.io/ngx-mcp-apps/components/one-file-app.ts` is a whole MCP App in one file (component and
+bootstrap): tool result with a guard, waiting and standalone states, host theme, a server tool call, polling,
+fullscreen and `updateModelContext`. For a small app, copy it as `src/main.ts` and change the data and the template.
+
 ## Ready-made components
 
 Copy these files into the application instead of writing them again. Each is one standalone file with no other

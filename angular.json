@@ -53,6 +53,25 @@
           }
         }
       }
+    },
+    "one-file": {
+      "projectType": "application",
+      "root": "projects/one-file",
+      "sourceRoot": "projects/one-file/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/one-file",
+            "browser": "projects/one-file/src/main.ts",
+            "index": "projects/one-file/src/index.html",
+            "tsConfig": "projects/one-file/tsconfig.app.json",
+            "singleFile": "dist/one-file.html",
+            "outputHashing": "none"
+          }
+        }
+      }
     }
   }
 }
