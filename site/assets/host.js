@@ -233,6 +233,9 @@ function mount(stage) {
   const logList = stage.querySelector('[data-log]');
   const extra = stage.querySelector('[data-chat-extra]');
   const replay = stage.querySelector('[data-replay]');
+  // The context the model will read: one line, replaced at each update, as the host keeps only the latest
+  const contextLine = stage.querySelector('[data-context]');
+  const contextText = stage.querySelector('[data-context-text]');
   const scenario = SCENARIOS[stage.dataset.scenario] ?? {};
   // What opens the app: the first button of the scenario, until another one is pressed
   let opening = scenario.actions?.find((action) => action.args) ?? scenario;
@@ -256,6 +259,10 @@ function mount(stage) {
     timers = [];
     logList.replaceChildren();
     extra.replaceChildren();
+    if (contextLine) {
+      contextLine.hidden = true;
+      contextLine.dataset.updates = '0';
+    }
     holder.classList.remove('is-fullscreen');
   };
   reset();
@@ -296,6 +303,8 @@ function mount(stage) {
     }
     p.append(text);
     extra.append(p);
+    // The conversation has a height of its own: the newest line stays in sight
+    extra.scrollTop = extra.scrollHeight;
   }
 
   /** A line of the conversation that names a tool the model calls. */
@@ -391,7 +400,14 @@ function mount(stage) {
       case 'ui/update-model-context':
         // Each update replaces the previous one: the model reads the latest on its next turn
         modelContext = String(params?.content?.[0]?.text ?? '');
-        say('context', 'Added to the model context', String(params?.content?.[0]?.text ?? ''));
+        if (contextLine) {
+          contextText.textContent = modelContext;
+          contextLine.dataset.updates = String(Number(contextLine.dataset.updates ?? 0) + 1);
+          contextLine.hidden = false;
+          contextLine.classList.remove('is-new');
+          void contextLine.offsetWidth;
+          contextLine.classList.add('is-new');
+        } else say('context', 'Added to the model context', modelContext);
         return {};
       case 'ui/message':
         say('bubble user', '', String(params?.content?.[0]?.text ?? ''));

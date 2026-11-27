@@ -62,26 +62,3 @@ l'app si apre sia a ogni lettura del server. I tool su cui si basa (`show_chart`
 [Il lato server](server.html). Il file da solo: [`chart.ts`](example/chart.ts).
 
 <!-- source: projects/chart/src/main.ts -->
-
-## I nove pezzi in una sola app
-
-Una seconda applicazione, una lista di cose da mettere in valigia, è costruita con i nove
-[componenti](components.html) che puoi copiare: il badge della connessione, gli stati della chiamata al tool, un
-pulsante che chiama un tool, un valore che segue il server, il tema, lo schermo intero, una nota per il modello, un
-link aperto dall'host, un avviso fuori da un host. Qui gira con lo stesso tipo di host.
-
-<!-- stage -->
-
-- **Aggiungi un elemento.** Il pulsante chiama il tool del server `add_item` attraverso l'host. La lista torna nel
-  risultato, e il conteggio delle modifiche salvate si aggiorna da solo entro un secondo.
-- **Scrivi una nota per il modello.** "Add to context" resta silenzioso; "Send as message" compare nella chat.
-- **Say next.** "Add what I need for the beach" fa chiamare al modello `add_items`, e la lista sullo schermo cresce
-  da sola. "Did I leave you a note?" risponde con ciò che ha mandato "Add to context".
-
-Apri questa [applicazione da sola](example/app.html) per vedere il suo stato standalone.
-
-<!-- source: projects/example/src/app/app.ts -->
-
-La sua configurazione:
-
-<!-- source: projects/example/src/main.ts -->

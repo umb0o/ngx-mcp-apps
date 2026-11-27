@@ -287,6 +287,12 @@ const isChart = (v: unknown): v is Chart =>
         opacity: 0;
       }
     }
+    /* Narrow (a phone): the values of marked columns would touch, only the selected one keeps its label */
+    @media (max-width: 30rem) {
+      .col.star:not(.on) .value {
+        opacity: 0;
+      }
+    }
     @media (prefers-reduced-motion: reduce) {
       .mark {
         transition: none;

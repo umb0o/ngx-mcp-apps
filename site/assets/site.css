@@ -1641,3 +1641,113 @@ td:first-child code {
   margin: 0 0 1rem;
   color: var(--muted);
 }
+
+/* The stage, chat first: the app and the conversation in one column, the messages between the app and the host
+   folded underneath, for who wants to see them. */
+.stage {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 48rem;
+}
+.stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: -0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.stage-title {
+  font-weight: 600;
+}
+.stage-bar button {
+  cursor: pointer;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.stage-bar button:hover {
+  border-color: var(--ink);
+}
+/* What the model will read: one line, replaced at each update */
+.chat .context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.55rem;
+  padding: 0.4rem 0.75rem;
+  border: 0;
+  border-left: 3px solid var(--app);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--app) 7%, transparent);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.chat .context[hidden] {
+  display: none;
+}
+.chat .context .label {
+  display: inline;
+  flex: none;
+  font-weight: 600;
+}
+.chat .context.is-new {
+  animation: context-new 0.9s ease-out;
+}
+@keyframes context-new {
+  from {
+    background: color-mix(in srgb, var(--app) 22%, transparent);
+  }
+}
+/* The conversation after the app has a height of its own, so the page does not grow with every turn */
+.conversation {
+  max-height: 20rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.conversation:empty {
+  display: none;
+}
+/* The messages between the app and the host, folded */
+details.wire {
+  display: block;
+  border-top: 1.5px solid var(--ink);
+}
+:root[data-theme='dark'] details.wire {
+  border-top-color: var(--pit-line);
+}
+details.wire > summary {
+  cursor: pointer;
+  padding: 0.8rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--pit-ink);
+  list-style-position: inside;
+}
+details.wire > summary:hover {
+  color: #fff;
+}
+details.wire[open] > summary {
+  padding-bottom: 0.6rem;
+}
+details.wire .ends {
+  padding-inline: 1.4rem;
+}
+details.wire ol {
+  flex: none;
+  min-height: 0;
+  max-height: 22rem;
+  padding-inline: 1.4rem;
+  background:
+    linear-gradient(var(--rail), var(--rail)) 1.4rem 0 / 1px 100% no-repeat,
+    linear-gradient(var(--rail), var(--rail)) calc(100% - 1.4rem) 0 / 1px 100% no-repeat;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat .context.is-new {
+    animation: none;
+  }
+}

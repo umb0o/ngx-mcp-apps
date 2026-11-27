@@ -14,8 +14,7 @@ della pagina [L'esempio](example.html) è un'app intera in un solo file.
 ## Oppure prendi i pezzi
 
 Nove piccoli file, ognuno con un solo compito, per quando l'app cresce. Funzionano da Angular 18 e prendono i colori
-dal testo che li circonda, quindi seguono il tuo tema senza un foglio di stile. Un'applicazione li usa tutti e nove:
-la vedi in funzione in [I nove pezzi in una sola app](example.html#i-nove-pezzi-in-una-sola-app).
+dal testo che li circonda, quindi seguono il tuo tema senza un foglio di stile.
 
 <!-- list: pieces -->
 

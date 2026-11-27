@@ -559,7 +559,9 @@ const highlighter = await createHighlighter({
  */
 const STAGE_WORDS = {
   it: [
-    ['Across the iframe border', "Attraverso il bordo dell'iframe"],
+    ['Messages between the app and the host', 'Messaggi tra app e host'],
+    ['Added to the model context', 'Aggiunto al contesto del modello'],
+    ['<span class="stage-title">Preview</span>', '<span class="stage-title">Anteprima</span>'],
     ['Run again', 'Riavvia'],
     ['aria-label="Live example"', 'aria-label="Esempio dal vivo"'],
     ['aria-label="Live preview"', 'aria-label="Anteprima dal vivo"'],
