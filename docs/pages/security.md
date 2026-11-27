@@ -108,4 +108,4 @@ put real data behind a tool. More in [Things that go wrong](server.html#things-t
 
 ## The whole file
 
-<!-- source: projects/security/src/main.ts -->
+<!-- source: docs/apps/security/src/main.ts -->

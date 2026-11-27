@@ -1,7 +1,7 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../out-tsc/example",
+    "outDir": "../../../out-tsc/example",
     "strict": true,
     "types": []
   },

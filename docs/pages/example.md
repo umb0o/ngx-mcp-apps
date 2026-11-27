@@ -59,4 +59,4 @@ opens and at every reading of the server. The tools it relies on (`show_chart`, 
 `highlight_points`, `read_chart_selection`, `read_chart`, `select_point`) are written out in
 [The server side](server.html). The file alone: [`chart.ts`](example/chart.ts).
 
-<!-- source: projects/chart/src/main.ts -->
+<!-- source: docs/apps/chart/src/main.ts -->

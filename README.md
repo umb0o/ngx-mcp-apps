@@ -8,7 +8,7 @@ Write MCP Apps, the interactive pages shown inside AI chats such as Claude, as n
 [![MIT licence](https://img.shields.io/github/license/umb0o/ngx-mcp-apps)](https://github.com/umb0o/ngx-mcp-apps/blob/main/LICENSE)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/umb0o/ngx-mcp-apps/main/docs/demo.gif" width="420"
+  <img src="https://umb0o.github.io/ngx-mcp-apps/assets/demo.gif" width="420"
     alt="An assistant answers three questions with small apps inside the chat: a packing list to tick, a sales chart, a table booking." />
 </p>
 

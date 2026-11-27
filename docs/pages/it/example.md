@@ -61,4 +61,4 @@ l'app si apre sia a ogni lettura del server. I tool su cui si basa (`show_chart`
 `highlight_points`, `read_chart_selection`, `read_chart`, `select_point`) sono scritti per esteso in
 [Il lato server](server.html). Il file da solo: [`chart.ts`](example/chart.ts).
 
-<!-- source: projects/chart/src/main.ts -->
+<!-- source: docs/apps/chart/src/main.ts -->

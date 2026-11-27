@@ -114,4 +114,4 @@ prima di mettere dati reali dietro un tool. Maggiori dettagli in
 
 ## Il file completo
 
-<!-- source: projects/security/src/main.ts -->
+<!-- source: docs/apps/security/src/main.ts -->
