@@ -31,6 +31,15 @@ jobs:
           fi
 
           VERSION=$(node -p "require('./projects/ngx-mcp-apps/package.json').version")
+          if npm view "ngx-mcp-apps@$VERSION" version >/dev/null 2>&1; then
+            # Nothing new for npm: documentation, site, tests
+            {
+              echo "Version $VERSION is already on npm: merging this pull request releases nothing."
+              echo "It updates the repository and the documentation site."
+            } > body.md
+            gh pr create --base main --head dev --title "Update without a release" --body-file body.md --reviewer "$REVIEWER"
+            exit 0
+          fi
           {
             echo "Merging this pull request releases **$VERSION**: the library is built and staged on npm."
             echo "The staged version becomes public only after approval on npmjs.com."

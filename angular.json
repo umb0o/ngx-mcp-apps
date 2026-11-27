@@ -33,6 +33,26 @@
           }
         }
       }
+    },
+    "example": {
+      "projectType": "application",
+      "root": "projects/example",
+      "sourceRoot": "projects/example/src",
+      "prefix": "mcp",
+      "architect": {
+        "build": {
+          "builder": "ngx-mcp-apps-builder:application",
+          "options": {
+            "outputPath": "dist/example",
+            "browser": "projects/example/src/main.ts",
+            "index": "projects/example/src/index.html",
+            "tsConfig": "projects/example/tsconfig.app.json",
+            "styles": ["projects/example/src/styles.css"],
+            "singleFile": "dist/example.html",
+            "outputHashing": "none"
+          }
+        }
+      }
     }
   }
 }

@@ -37,3 +37,5 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
+      # The documentation site: it also compiles the example and the copy-and-paste components
+      - run: npm run build:site

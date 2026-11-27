@@ -9,6 +9,9 @@ the MCP Apps protocol with the host for you and exposes everything as signals: t
 tool call that opened the app, the host theme and the display mode. A second package, `ngx-mcp-apps-builder`, builds
 the application into the single HTML file that hosts expect.
 
+**Documentation, a live example and components to copy: [umb0o.github.io/ngx-mcp-apps](https://umb0o.github.io/ngx-mcp-apps/).**
+Coding agents: start from [llms.txt](https://umb0o.github.io/ngx-mcp-apps/llms.txt).
+
 - **Signals first.** Connection status, tool data, host theme and display mode are signals.
 - **Lightweight, no dependencies.** The view side of the protocol is implemented here: about 13 KB minified, under 5 KB gzipped, with no runtime dependencies.
 - **Checked at runtime.** Every message from the host goes through small hand-written type guards.
@@ -134,8 +137,8 @@ returns to the host.
 
 **No lazy loading.** One HTML file cannot fetch other chunks: use static imports only (no `loadComponent` /
 `loadChildren`, no `@defer` blocks, no dynamic `import()`). If the build would need a separate chunk it fails with an
-error that lists the files, instead of writing a file that breaks at runtime. Images and fonts are not inlined:
-embed them as `data:` URLs or load them from an absolute `https://` URL. More in the
+error that lists the files, instead of writing a file that breaks at runtime. Fonts and images referenced by your CSS
+are embedded; an image named in a template (`<img src>`) is not: use a `data:` URL or an absolute `https://` URL. More in the
 [builder README](./projects/ngx-mcp-apps-builder/README.md).
 
 Two more things to know inside the host iframe:
