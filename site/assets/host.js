@@ -20,7 +20,170 @@ const toolResult = (structuredContent, text = 'One contact.') => ({
   method: 'ui/notifications/tool-result',
   params: { content: [{ type: 'text', text }], structuredContent },
 });
+
+// The later turns of a conversation. There is no model in this page: its side is written in advance.
+// A round has the words of the user ("ask") and what the model then does ("play"). Rounds are offered
+// in order, one at a time; a round marked "once" is not offered again, the last one can be repeated.
+const assistant = (c, text) => {
+  c.say('bubble assistant', '', text);
+  c.next();
+};
+const BEACH = ['Swimsuit', 'Beach towel', 'Sunscreen'];
+const PACKING_ROUNDS = [
+  {
+    ask: 'Add what I need for the beach',
+    once: true,
+    play(c) {
+      // The model calls a tool of the server. Nothing is sent to the app: it follows the server.
+      c.later(700, () => {
+        c.modelCalls('add_items');
+        c.addToList(BEACH);
+      });
+      c.later(2000, () =>
+        assistant(c, 'Added the things for the beach. The list above already shows them.'),
+      );
+    },
+  },
+  {
+    ask: 'Did I leave you a note?',
+    play(c) {
+      c.later(900, () =>
+        assistant(
+          c,
+          c.context()
+            ? `Yes. From the app I have this: "${c.context()}"`
+            : 'Not yet. Write a note in the app and press "Add to context", then ask me again.',
+        ),
+      );
+    },
+  },
+];
+
+// The chart of the example page. The numbers are invented: the title says so.
+const point = ([label, value]) => ({ label, value });
+const MONTHS = [
+  ['Jan', 31],
+  ['Feb', 28],
+  ['Mar', 36],
+  ['Apr', 33],
+  ['May', 27],
+  ['Jun', 41],
+  ['Jul', 44],
+  ['Aug', 25],
+  ['Sep', 48],
+].map(point);
+const AUTUMN = [
+  ['Oct', 52],
+  ['Nov', 61],
+].map(point);
+const amount = (chart, value) => `${value} ${chart.unit}`.trim();
+const CHART_ROUNDS = [
+  {
+    ask: 'Add October and November',
+    once: true,
+    play(c) {
+      // update_chart changes the server. The chart on screen is not told: it reads read_chart again.
+      c.later(700, () => {
+        c.modelCalls('update_chart');
+        const chart = c.state.chart;
+        c.state.chart = { ...chart, points: [...chart.points, ...AUTUMN] };
+      });
+      c.later(2000, () =>
+        assistant(c, 'Added October and November. The chart above already shows them.'),
+      );
+    },
+  },
+  {
+    ask: 'Which months were the worst?',
+    once: true,
+    play(c) {
+      c.later(700, () => {
+        c.modelCalls('highlight_points');
+        const chart = c.state.chart;
+        const [a, b] = [...chart.points].sort((x, y) => x.value - y.value);
+        c.state.chart = { ...chart, highlights: [a.label, b.label] };
+        c.later(1300, () =>
+          assistant(
+            c,
+            `${a.label} (${amount(chart, a.value)}) and ${b.label} (${amount(chart, b.value)}) were the two lowest. I marked them on the chart.`,
+          ),
+        );
+      });
+    },
+  },
+  {
+    ask: 'Why is this one so high?',
+    play(c) {
+      // "This one" is what the user tapped: the app recorded it on the server with select_point
+      c.later(700, () => c.modelCalls('read_chart_selection'));
+      c.later(1700, () => {
+        const { chart, selected } = c.state;
+        const i = chart.points.findIndex((p) => p.label === selected);
+        if (i === -1) {
+          assistant(
+            c,
+            'I cannot tell which one you mean. Tap a value in the chart, then ask me again.',
+          );
+          return;
+        }
+        const p = chart.points[i];
+        const before = chart.points[i - 1];
+        const top = chart.points.reduce((best, q) => (q.value > best.value ? q : best));
+        const step = before
+          ? ` That is ${amount(chart, Math.abs(p.value - before.value))} ${p.value >= before.value ? 'more' : 'less'} than ${before.label}.`
+          : '';
+        const rank =
+          top.label === p.label
+            ? ' It is the highest value of the chart.'
+            : ` The highest is ${top.label} (${amount(chart, top.value)}).`;
+        assistant(
+          c,
+          `You mean ${p.label}: ${amount(chart, p.value)}.${step}${rank} A real model would now say why; this page has none, it only shows that the model knows which value you mean.`,
+        );
+      });
+    },
+  },
+];
+
 const SCENARIOS = {
+  // The packing list that uses the nine pieces
+  app: { rounds: PACKING_ROUNDS },
+  chart: {
+    ask: 'How did we sell this year?',
+    tool: 'show_chart',
+    poll: 'read_chart',
+    // The "server" of this scenario: what its tools read and write
+    state: () => ({
+      chart: {
+        title: 'Sales by month (sample data)',
+        unit: 'k€',
+        type: 'bar',
+        points: MONTHS,
+        highlights: [],
+      },
+      selected: '',
+    }),
+    args: ({ chart }) => ({
+      title: chart.title,
+      unit: chart.unit,
+      type: chart.type,
+      points: chart.points,
+    }),
+    result: ({ chart }) => ({
+      content: [{ type: 'text', text: 'Drawn in the app.' }],
+      structuredContent: chart,
+    }),
+    // The tools only the app calls
+    tools: {
+      read_chart: (state) => ({ content: [], structuredContent: state.chart }),
+      select_point(state, args) {
+        const label = typeof args?.label === 'string' ? args.label : '';
+        state.selected = state.chart.points.some((p) => p.label === label) ? label : '';
+        return { content: [{ type: 'text', text: 'ok' }] };
+      },
+    },
+    rounds: CHART_ROUNDS,
+  },
   routing: {
     tool: 'show_trips',
     result: () => ({ content: [{ type: 'text', text: 'Three trips.' }] }),
@@ -74,16 +237,16 @@ function mount(stage) {
   // What opens the app: the first button of the scenario, until another one is pressed
   let opening = scenario.actions?.find((action) => action.args) ?? scenario;
 
-  // The "server": state the tools read and write
-  let list, changes, mode, polls, pollEntry, timers, modelContext, round;
-  // Later rounds of the conversation are offered only where the app follows the list on the server
-  const rounds = /\/app\.html$/.test(frame.dataset.src)
-    ? stage.querySelector('[data-rounds]')
-    : null;
+  // The "server": state the tools read and write. A scenario with tools of its own keeps it in "state"
+  let list, changes, state, mode, polls, pollEntry, timers, modelContext, round;
+  // Later rounds of the conversation, where the scenario has them
+  const ROUNDS = scenario.rounds ?? [];
+  const rounds = ROUNDS.length ? stage.querySelector('[data-rounds]') : null;
   const reset = () => {
     modelContext = '';
     round = 0;
     rounds?.replaceChildren();
+    state = scenario.state?.() ?? {};
     list = { title: 'Weekend in Lisbon', items: ['Passport', 'Phone charger', 'Walking shoes'] };
     changes = 0;
     mode = 'inline';
@@ -145,46 +308,22 @@ function mount(stage) {
     extra.append(p);
   }
 
-  // The later rounds of the conversation. There is no model in this page: its side is written in advance.
-  const BEACH = ['Swimsuit', 'Beach towel', 'Sunscreen'];
-  const ROUNDS = [
-    {
-      ask: 'Add what I need for the beach',
-      once: true,
-      play() {
-        // The model calls a tool of the server. Nothing is sent to the app: it follows the server.
-        later(700, () => {
-          modelCalls('add_items');
-          const missing = BEACH.filter((item) => !list.items.includes(item));
-          list = { ...list, items: [...list.items, ...missing] };
-          changes++;
-        });
-        later(2000, () => {
-          say(
-            'bubble assistant',
-            '',
-            'Added the things for the beach. The list above already shows them.',
-          );
-          offerRound();
-        });
-      },
+  // What a round of the conversation may use: the conversation, the clock, the state of the "server"
+  const turn = {
+    get state() {
+      return state;
     },
-    {
-      ask: 'Did I leave you a note?',
-      play() {
-        later(900, () => {
-          say(
-            'bubble assistant',
-            '',
-            modelContext
-              ? `Yes. From the app I have this: "${modelContext}"`
-              : 'Not yet. Write a note in the app and press "Add to context", then ask me again.',
-          );
-          offerRound();
-        });
-      },
+    later,
+    say,
+    modelCalls,
+    next: () => offerRound(),
+    context: () => modelContext,
+    addToList(items) {
+      const missing = items.filter((item) => !list.items.includes(item));
+      list = { ...list, items: [...list.items, ...missing] };
+      changes++;
     },
-  ];
+  };
 
   /** Shows what the user can say next. The same app stays open through every round. */
   function offerRound() {
@@ -200,7 +339,7 @@ function mount(stage) {
       rounds.replaceChildren();
       say('bubble user', '', next.ask);
       if (next.once || round < ROUNDS.length - 1) round++;
-      next.play();
+      next.play(turn);
     });
     rounds.append(label, button);
   }
@@ -217,6 +356,8 @@ function mount(stage) {
 
   // tools/call: what the MCP server would answer
   function callTool(name, args) {
+    const own = scenario.tools?.[name];
+    if (own) return own(state, args);
     if (name === 'read_counter') return { content: [], structuredContent: { value: changes } };
     if (name === 'read_list') return { content: [], structuredContent: list };
     if (name === 'add_item') {
@@ -282,13 +423,14 @@ function mount(stage) {
       log('out', m.method);
       if (m.method === 'ui/notifications/initialized') {
         // Like a real host: the arguments of the tool call first, the result a moment later
+        const args = typeof opening.args === 'function' ? opening.args(state) : opening.args;
         later(500, () =>
-          notify('ui/notifications/tool-input', { arguments: opening.args ?? { trip: 'Lisbon' } }),
+          notify('ui/notifications/tool-input', { arguments: args ?? { trip: 'Lisbon' } }),
         );
         later(1500, () =>
           notify(
             'ui/notifications/tool-result',
-            scenario.result?.() ?? {
+            scenario.result?.(state) ?? {
               content: [{ type: 'text', text: `The list has ${list.items.length} items.` }],
               structuredContent: list,
             },
@@ -301,12 +443,13 @@ function mount(stage) {
 
     // Requests from the app. The poll would flood the log: it gets one line with a count
     const isPoll =
-      m.method === 'tools/call' && ['read_counter', 'read_list'].includes(m.params?.name);
+      m.method === 'tools/call' &&
+      ['read_counter', 'read_list', 'read_chart'].includes(m.params?.name);
     if (isPoll) {
       polls++;
-      if (!pollEntry?.isConnected) pollEntry = log('out', 'tools/call', 'read_list');
+      if (!pollEntry?.isConnected) pollEntry = log('out', 'tools/call', 'poll');
       pollEntry.querySelector('.detail').textContent =
-        `read_list and read_counter, every second (${polls})`;
+        `${scenario.poll ?? 'read_list and read_counter'}, every second (${polls})`;
     } else {
       log('out', m.method, m.method === 'tools/call' ? m.params?.name : undefined);
     }

@@ -316,7 +316,7 @@ describe('inlineHtml: kinds of extra JavaScript files', () => {
       }),
     );
     expect(text).toMatch(/dynamic import\(\): chunk-LAZY\.js, chunk-DEEP\.js\./);
-    expect(text).toMatch(/cannot use lazy loading/);
+    expect(text).toMatch(/must be merged into the document first/);
     expect(text).toMatch(/import statically: chunk-SHARED\.js\./);
     expect(text).toMatch(/code splitting, not lazy loading by itself/);
   });
@@ -330,7 +330,7 @@ describe('inlineHtml: kinds of extra JavaScript files', () => {
     );
     expect(text).toMatch(/import statically: chunk-SHARED\.js\./);
     expect(text).toMatch(/not lazy loading: no dynamic import\(\) was found/);
-    expect(text).toMatch(/no option to turn code splitting off/);
+    expect(text).toMatch(/can be merged into the document like a lazy chunk/);
     expect(text).not.toMatch(/cannot use lazy loading/);
   });
 

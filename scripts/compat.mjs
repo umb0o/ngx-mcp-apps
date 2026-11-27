@@ -67,26 +67,44 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { McpApp, provideMcpApp } from 'ngx-mcp-apps';
+import { Later } from './later';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [MatCheckboxModule, MatProgressBarModule],
+  imports: [MatCheckboxModule, MatProgressBarModule, Later],
   template: \`
     <p id="status">{{ mcp.status() }}</p>
     <mat-progress-bar mode="determinate" [value]="done() ? 100 : 40" />
     <mat-checkbox id="box" (change)="done.set($event.checked)">Done</mat-checkbox>
     <p id="done">{{ done() ? 'yes' : 'no' }}</p>
+    @defer (on immediate) {
+      <app-later />
+    }
+    <p id="dynamic">{{ dynamic() }}</p>
   \`,
 })
 class App {
   protected readonly mcp = inject(McpApp);
   protected readonly done = signal(false);
+  protected readonly dynamic = signal('');
+  constructor() {
+    import('./more').then((m) => this.dynamic.set(m.more()));
+  }
 }
 
 bootstrapApplication(App, {
   providers: [provideMcpApp({ name: 'compat', version: '1.0.0', connectTimeout: 500 })],
 }).catch((e) => console.error(e));
+`;
+
+// Lazy parts: a @defer block and a dynamic import. Angular makes chunks of them, the builder merges them back.
+const LATER = `import { Component } from '@angular/core';
+
+@Component({ selector: 'app-later', standalone: true, template: '<p id="later">deferred</p>' })
+export class Later {}
+`;
+const MORE = `export const more = () => 'dynamic import';
 `;
 
 const browser = await chromium.launch({
@@ -140,10 +158,14 @@ async function check(major) {
     ];
     writeFileSync(workspaceFile, JSON.stringify(workspace, null, 2));
     writeFileSync(join(app, 'src/main.ts'), MAIN);
+    writeFileSync(join(app, 'src/later.ts'), LATER);
+    writeFileSync(join(app, 'src/more.ts'), MORE);
 
     const output = await step('ng build', () => run('npx ng build', app));
     if (!/Single file: dist\/app\.html/.test(output))
       throw new Error('the build did not report the single file');
+    if (!/chunks? merged into the file/.test(output))
+      throw new Error('the build did not merge the lazy chunks');
     const html = readFileSync(join(app, 'dist/app.html'), 'utf8');
     if (/<script[^>]+\ssrc=/.test(html)) throw new Error('the single file still loads a script');
     if (/<link[^>]+rel="stylesheet"[^>]+href="(?!https?:)/.test(html))
@@ -169,6 +191,9 @@ async function check(major) {
           throw new Error('the Material progress bar has no size: its styles are missing');
         await page.locator('#box input').check();
         await page.locator('#done', { hasText: 'yes' }).waitFor({ timeout: 3000 });
+        // The lazy parts are in the file: they appear without fetching anything
+        await page.locator('#later', { hasText: 'deferred' }).waitFor({ timeout: 3000 });
+        await page.locator('#dynamic', { hasText: 'dynamic import' }).waitFor({ timeout: 3000 });
         if (errors.length) throw new Error(`errors in the page: ${errors.join(' | ')}`);
       } finally {
         await page.close();

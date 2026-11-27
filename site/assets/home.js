@@ -34,6 +34,13 @@ if (scene) {
   /** What happens inside each card, as steps after the card has appeared. */
   const acts = [
     (story, at, t) => {
+      const best = story.querySelector('.bar:last-child');
+      at(t + 500, () => story.querySelector('.bars').classList.add('on'));
+      at(t + 1700, () => pointAt(best.querySelector('i')));
+      at(t + 2300, () => best.classList.add('hot'));
+      return t + 2900;
+    },
+    (story, at, t) => {
       const card = story.querySelector('.card');
       const items = story.querySelectorAll('.ticks li');
       const count = story.querySelector('[data-count]');
@@ -46,13 +53,6 @@ if (scene) {
       at(t + 1300, () => (tap(), pack(1)));
       at(t + 1800, () => pointAt(items[1]));
       at(t + 2400, () => (tap(), pack(2)));
-      return t + 2900;
-    },
-    (story, at, t) => {
-      const best = story.querySelector('.bar:last-child');
-      at(t + 500, () => story.querySelector('.bars').classList.add('on'));
-      at(t + 1700, () => pointAt(best.querySelector('i')));
-      at(t + 2300, () => best.classList.add('hot'));
       return t + 2900;
     },
     (story, at, t) => {

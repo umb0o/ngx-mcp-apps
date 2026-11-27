@@ -140,9 +140,10 @@ Single file: public/app.html (212.4 kB)
 `public/app.html` is the whole app: every local script and stylesheet is inlined. This is the file your MCP server
 returns to the host.
 
-**No lazy loading.** One HTML file cannot fetch other chunks: use static imports only (no `loadComponent` /
-`loadChildren`, no `@defer` blocks, no dynamic `import()`). If the build would need a separate chunk it fails with an
-error that lists the files, instead of writing a file that breaks at runtime. Fonts and images referenced by your CSS
+**Lazy loading is merged into the file.** One HTML file cannot fetch other chunks, so the builder puts lazy routes
+(`loadComponent` / `loadChildren`), `@defer` blocks and dynamic `import()` back into the file. The code works as
+written, but everything is loaded with the app: there is no saving. A web worker cannot be merged and fails the build.
+Fonts and images referenced by your CSS
 are embedded; an image named in a template (`<img src>`) is not: use a `data:` URL or an absolute `https://` URL. More in the
 [builder README](./projects/ngx-mcp-apps-builder/README.md).
 
@@ -313,7 +314,8 @@ Run it yourself with `npm run build && npm run test:compat`.
 - Not wrapped yet: tools provided by the app to the host, sampling, file download, reading server resources.
   They are reachable through `bridge.request(...)` and `bridge.onRequest(...)`.
 - Only the host context fields the library knows are validated; unknown fields are passed through as they are.
-- The single HTML file cannot use lazy loading (see [Build one HTML file](#4-build-one-html-file)).
+- The single HTML file loads everything at once: lazy chunks are merged into it, and web workers are not supported
+  (see [Build one HTML file](#4-build-one-html-file)).
 
 ## Packages in this repository
 

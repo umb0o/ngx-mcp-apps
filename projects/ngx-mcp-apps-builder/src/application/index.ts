@@ -2,10 +2,18 @@ import { type BuilderContext, type BuilderOutput, createBuilder } from '@angular
 import { type ApplicationBuilderOptions, buildApplication } from '@angular/build';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
-import { inlineHtml, resolveInside, SingleFileError } from './inline';
+import {
+  findSplit,
+  inlineHtml,
+  type MergedModules,
+  resolveInside,
+  SingleFileError,
+} from './inline';
+import { bundleModules } from './merge';
 import { withoutCriticalCss } from './optimization';
 
 export {
+  findSplit,
   inlineCssUrls,
   inlineHtml,
   SingleFileError,
@@ -13,7 +21,11 @@ export {
   type CssUrlsResult,
   type InlineOptions,
   type InlineResult,
+  type MergedModules,
+  type SplitKind,
+  type SplitPlan,
 } from './inline';
+export { bundleModules } from './merge';
 
 /** Options of the official application builder, plus the single-file output. */
 export type SingleFileApplicationOptions = ApplicationBuilderOptions & {
@@ -60,10 +72,10 @@ function formatSize(bytes: number): string {
 }
 
 /** Reads the build output from disk and writes the single HTML file. Returns the logged summary. */
-export function writeSingleFile(
+export async function writeSingleFile(
   options: SingleFileApplicationOptions & { singleFile: string },
   context: BuilderContext,
-): string {
+): Promise<string> {
   const browserDir = browserOutputDir(options, context);
   let indexPath = join(browserDir, indexFileName(options));
   // With server rendering or prerendering the client-side document is index.csr.html
@@ -72,11 +84,39 @@ export function writeSingleFile(
     throw new SingleFileError(`Cannot find the built index.html in ${browserDir}.`);
   }
 
+  const indexHtml = readFileSync(indexPath, 'utf8');
+  const outputFiles = listFiles(browserDir);
+  const readFile = (path: string) => readFileSync(resolveInside(browserDir, path), 'utf8');
+
+  // Lazy chunks and shared chunks are put back into one module. A web worker cannot be: it stays an error.
+  let merged: MergedModules | undefined;
+  const split = findSplit(indexHtml, { outputFiles, readFile });
+  const kinds = [...split.files.values()];
+  if (split.entries.length > 0 && kinds.length > 0 && !kinds.includes('worker')) {
+    const optimization = options.optimization;
+    const minify =
+      typeof optimization === 'object' ? optimization.scripts !== false : optimization !== false;
+    merged = {
+      code: await bundleModules(browserDir, split.entries, minify),
+      entries: split.entries,
+      files: [...split.entries, ...split.files.keys()],
+    };
+    const lazy = kinds.filter((kind) => kind === 'dynamic').length;
+    context.logger.info(
+      `Single file: ${split.files.size} JavaScript ${split.files.size === 1 ? 'chunk' : 'chunks'} merged into the file` +
+        (lazy > 0
+          ? ` (${lazy} loaded on demand by lazy routes, @defer blocks or import()). They are loaded with the ` +
+            'app, not on demand: lazy loading still works, without its saving.'
+          : ' (code splitting).'),
+    );
+  }
+
   let embeddedBytes = 0;
-  const { html, warnings, embedded, remote, assets } = inlineHtml(readFileSync(indexPath, 'utf8'), {
-    outputFiles: listFiles(browserDir),
+  const { html, warnings, embedded, remote, assets } = inlineHtml(indexHtml, {
+    outputFiles,
+    merged,
     // Only files of the build output can end up in the document
-    readFile: (path) => readFileSync(resolveInside(browserDir, path), 'utf8'),
+    readFile,
     readBinaryFile: (path) => {
       const bytes = readFileSync(resolveInside(browserDir, path));
       embeddedBytes += bytes.byteLength;
@@ -146,7 +186,7 @@ export async function* buildSingleFileApplication(
       continue;
     }
     try {
-      context.logger.info(writeSingleFile({ ...applicationOptions, singleFile }, context));
+      context.logger.info(await writeSingleFile({ ...applicationOptions, singleFile }, context));
       yield result;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

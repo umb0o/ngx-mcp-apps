@@ -57,8 +57,9 @@ Source of every copy-and-paste component: https://umb0o.github.io/ngx-mcp-apps/c
 
 ## Rules that prevent the usual mistakes
 
-- **No lazy loading.** No `loadComponent`, `loadChildren`, `@defer`, dynamic `import()` or web workers: one HTML
-  file cannot fetch other chunks, and the build fails. Use static imports.
+- **Lazy loading is merged, workers fail.** `loadComponent`, `loadChildren`, `@defer` and dynamic `import()` build
+  and work: the builder merges their chunks into the single file, so they load with the app and save nothing. Do
+  not add them to make the app lighter. A web worker cannot be merged: the build fails.
 - **Router:** if a router is needed, use `provideRouter(routes, withHashLocation())`. The iframe URL is not the
   app's. A complete example, with the model choosing the first view: https://umb0o.github.io/ngx-mcp-apps/routing.md
 - **Colour scheme:** set `color-scheme` on the document root from `mcp.theme()`
@@ -81,6 +82,14 @@ Source of every copy-and-paste component: https://umb0o.github.io/ngx-mcp-apps/c
 - **A click in the app cannot make the model answer.** `updateModelContext` is read on the model's next turn;
   `sendMessage` posts a user message but hosts may refuse it. Design the app so it is useful without waking the
   model.
+- **An app that lasts several turns** works in two directions. Model to app: the model changes state on the
+  server with a normal tool (not the one that opens the app), and the open app follows it with
+  `pollServerTool('read_...', { guard })` on a tool with `visibility: ['app']`. User to model: the app records
+  what the user selected with `updateModelContext(text)` and with an app-only tool, so a tool of the model can
+  read it on the next message. The chart of https://umb0o.github.io/ngx-mcp-apps/example.md does both; its server
+  is in https://umb0o.github.io/ngx-mcp-apps/server.md
+- **Do not hang an `effect` on a polled signal directly:** it changes at every poll. Derive a primitive with
+  `computed` first (a label, a text) and react to that.
 - **Angular 18:** components need `standalone: true` (it is the default from Angular 19).
 - **Outside a host** (`ng serve`) `mcp.status()` becomes `'standalone'` after `connectTimeout` (4000 ms by
   default): the app must render something sensible without tool data.
@@ -112,6 +121,10 @@ Options of `provideMcpApp`: `name`, `version` (required), `autoResize` (true), `
 `https://umb0o.github.io/ngx-mcp-apps/components/one-file-app.ts` is a whole MCP App in one file (component and
 bootstrap): tool result with a guard, waiting and standalone states, host theme, a server tool call, polling,
 fullscreen and `updateModelContext`. For a small app, copy it as `src/main.ts` and change the data and the template.
+
+`https://umb0o.github.io/ngx-mcp-apps/example/chart.ts` is the main example of the documentation, also one file:
+a chart the model draws with a tool call and changes in later turns, where the user selects a value and asks about
+it in the chat. Start from it when the model must keep working on what the app shows.
 
 ## Ready-made components
 

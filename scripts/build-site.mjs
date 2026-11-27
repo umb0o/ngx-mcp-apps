@@ -38,6 +38,7 @@ for (const need of ['dist/ngx-mcp-apps/package.json', 'dist/ngx-mcp-apps-builder
 const link = 'node_modules/ngx-mcp-apps-builder';
 rmSync(link, { recursive: true, force: true });
 symlinkSync(resolve('dist/ngx-mcp-apps-builder'), link, 'junction');
+execSync('npx ng build chart', { stdio: 'inherit' });
 execSync('npx ng build example', { stdio: 'inherit' });
 execSync('npx ng build one-file', { stdio: 'inherit' });
 execSync('npx ng build gallery', { stdio: 'inherit' });
@@ -46,6 +47,8 @@ execSync('npx ng build security', { stdio: 'inherit' });
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
+cpSync('dist/chart.html', `${out}/example/chart.html`);
+cpSync('projects/chart/src/main.ts', `${out}/example/chart.ts`);
 cpSync('dist/example.html', `${out}/example/app.html`);
 cpSync('dist/one-file.html', `${out}/example/one-file.html`);
 cpSync('dist/gallery.html', `${out}/example/gallery.html`);
@@ -227,7 +230,8 @@ ng add ngx-mcp-apps-builder
 \`\`\`
 
 - [Get started](start.html): install, configure, read the tool result, build one HTML file.
-- [The example](example.html): a real application running against a host inside the page.
+- [The example](example.html): a chart the model draws and keeps working on, running against a host inside the
+  page.
 - [Components](components.html): nine files to copy and paste.
 - [The server side](server.html): the smallest MCP server that opens the app.
 - [For AI agents](agents.html): this documentation as plain text, and a skill.
@@ -414,7 +418,7 @@ const stageFor = (app) =>
     .replaceAll('APP_URL', `example/${app}.html`)
     .replace('data-host', `data-host data-scenario="${app}"`);
 const stage = stageFor('app');
-/** `<!-- stage -->` is the example, `<!-- stage: name -->` another application of dist/site/example. */
+/** `<!-- stage -->` is the packing list, `<!-- stage: name -->` another application of dist/site/example. */
 const previewTemplate = read('site/preview.html');
 const withStages = (html) =>
   html

@@ -10,6 +10,8 @@ the whole loop once.
 2. It exposes a tool and says "this tool opens that resource" with `_meta.ui.resourceUri`.
 3. When the model calls the tool, the server answers with a normal tool result. Its `structuredContent` is what
    the app reads with `mcp.structuredContent()`.
+4. In later turns the model calls other tools that change what the server holds. The open app is not told: it
+   asks the server again every second, with a tool that only the app can call.
 
 ## A minimal server
 
@@ -35,35 +37,123 @@ import {
 const BUILD = new URL('./dist/my-app.html', import.meta.url);
 
 // Kept in memory to keep the example short: use a database in a real server
-const list = { title: 'Weekend in Lisbon', items: ['Passport', 'Charger'] };
-let changes = 0;
+const chart = { title: 'Chart', unit: '', type: 'bar', points: [], highlights: [], selected: '' };
+
+const point = z.object({ label: z.string().min(1).max(24), value: z.number().min(0) });
+/** What the app draws: everything but the selection. */
+const chartData = () => ({
+  title: chart.title,
+  unit: chart.unit,
+  type: chart.type,
+  points: chart.points,
+  highlights: chart.highlights,
+});
+/** The same in words, for the model. */
+const chartText = () => {
+  const values = chart.points.map((p) => `${p.label} ${p.value}`).join(', ');
+  return `"${chart.title}": ${values || 'no data'}.`;
+};
 
 async function createServer() {
-  const server = new McpServer({ name: 'packing-list', version: '1.0.0' });
+  const server = new McpServer({ name: 'chart', version: '1.0.0' });
 
   // Hosts may cache the page: a hash of the build in the address makes a new build visible at once
   const html = await readFile(BUILD, 'utf8');
   const hash = createHash('sha256').update(html).digest('hex').slice(0, 12);
-  const uri = `ui://packing-list/app-${hash}.html`;
+  const uri = `ui://chart/app-${hash}.html`;
 
-  registerAppResource(server, 'packing-list', uri, { description: 'Packing list' }, async () => ({
+  registerAppResource(server, 'chart', uri, { description: 'Chart' }, async () => ({
     contents: [{ uri, mimeType: RESOURCE_MIME_TYPE, text: html }],
   }));
 
-  // The tool the model calls. Its result opens the app.
+  // The tool the model calls first. Its result opens the app.
   registerAppTool(
     server,
-    'show_packing_list',
+    'show_chart',
     {
-      title: 'Packing list',
-      description: 'Shows the packing list of the trip as an interactive list.',
-      inputSchema: {},
+      title: 'Chart',
+      description:
+        'Draws a chart as an interactive app in the conversation. The user can tap a value to select it.',
+      inputSchema: {
+        title: z.string().min(1).max(80),
+        points: z.array(point).min(1).max(24),
+        unit: z.string().max(12).optional(),
+        type: z.enum(['bar', 'line']).optional(),
+      },
       _meta: { ui: { resourceUri: uri } },
     },
-    async () => ({
-      content: [{ type: 'text', text: `The list has ${list.items.length} items.` }],
-      structuredContent: list,
-    }),
+    async ({ title, points, unit, type }) => {
+      Object.assign(chart, { title, points, unit: unit ?? '', type: type ?? 'bar' });
+      Object.assign(chart, { highlights: [], selected: '' });
+      return {
+        content: [{ type: 'text', text: `Drawn in the app. ${chartText()}` }],
+        structuredContent: chartData(),
+      };
+    },
+  );
+
+  // Normal tools the model calls in later turns. The open app is not told: it follows `read_chart`.
+  server.registerTool(
+    'update_chart',
+    {
+      description:
+        'Changes the chart that is already on screen. The open app redraws by itself: do not call show_chart again.',
+      inputSchema: {
+        title: z.string().min(1).max(80).optional(),
+        unit: z.string().max(12).optional(),
+        type: z.enum(['bar', 'line']).optional(),
+        points: z.array(point).max(24).optional(),
+        add_points: z.array(point).max(24).optional(),
+      },
+    },
+    async ({ title, unit, type, points, add_points }) => {
+      if (title !== undefined) chart.title = title;
+      if (unit !== undefined) chart.unit = unit;
+      if (type !== undefined) chart.type = type;
+      if (points) chart.points = points;
+      if (add_points) chart.points = [...chart.points, ...add_points].slice(-24);
+      // A mark on a value that is gone means nothing
+      chart.highlights = chart.highlights.filter((l) => chart.points.some((p) => p.label === l));
+      return {
+        content: [
+          { type: 'text', text: `Changed. The chart on screen already shows it. ${chartText()}` },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
+    'highlight_points',
+    {
+      description:
+        'Marks some values of the chart on screen, by label, so the user sees what you are talking about. An empty list removes the marks.',
+      inputSchema: { labels: z.array(z.string()).max(24) },
+    },
+    async ({ labels }) => {
+      const wanted = labels.map((l) => l.toLowerCase());
+      chart.highlights = chart.points
+        .filter((p) => wanted.includes(p.label.toLowerCase()))
+        .map((p) => p.label);
+      return {
+        content: [{ type: 'text', text: `Marked: ${chart.highlights.join(', ') || 'nothing'}.` }],
+      };
+    },
+  );
+
+  server.registerTool(
+    'read_chart_selection',
+    {
+      description:
+        'Reads which value of the chart the user selected by tapping it. Call it when the user says "this one" or asks about the chart without naming a value.',
+      inputSchema: {},
+    },
+    async () => {
+      const p = chart.points.find((x) => x.label === chart.selected);
+      const selection = p
+        ? `The user has selected ${p.label} (${p.value}).`
+        : 'The user has nothing selected.';
+      return { content: [{ type: 'text', text: `${selection} ${chartText()}` }] };
+    },
   );
 
   // Tools only the app calls: `visibility: ['app']` hides them from the model
@@ -71,52 +161,23 @@ async function createServer() {
 
   registerAppTool(
     server,
-    'add_item',
+    'read_chart',
+    { description: 'The chart as it is now.', inputSchema: {}, _meta: appOnly },
+    async () => ({ content: [], structuredContent: chartData() }),
+  );
+
+  registerAppTool(
+    server,
+    'select_point',
     {
-      description: 'Adds an item to the list.',
-      inputSchema: { text: z.string().min(1) },
+      description: 'What the user tapped.',
+      inputSchema: { label: z.string().max(24) },
       _meta: appOnly,
     },
-    async ({ text }) => {
-      list.items.push(text);
-      changes++;
-      return { content: [{ type: 'text', text: 'Added.' }], structuredContent: list };
+    async ({ label }) => {
+      chart.selected = chart.points.some((p) => p.label === label) ? label : '';
+      return { content: [{ type: 'text', text: 'ok' }] };
     },
-  );
-
-  // A normal tool the model calls in a later turn. The open app is not told: it follows `read_list`.
-  server.registerTool(
-    'add_items',
-    {
-      description: 'Adds several items to the packing list that is already shown.',
-      inputSchema: { items: z.array(z.string().min(1)) },
-    },
-    async ({ items }) => {
-      list.items.push(...items);
-      changes++;
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Added ${items.length} items. The list on screen updates by itself.`,
-          },
-        ],
-      };
-    },
-  );
-
-  registerAppTool(
-    server,
-    'read_list',
-    { description: 'The list as it is now.', inputSchema: {}, _meta: appOnly },
-    async () => ({ content: [], structuredContent: list }),
-  );
-
-  registerAppTool(
-    server,
-    'read_counter',
-    { description: 'How many changes were saved.', inputSchema: {}, _meta: appOnly },
-    async () => ({ content: [], structuredContent: { value: changes } }),
   );
 
   return server;
@@ -142,9 +203,18 @@ app.listen(3000, () => console.log('MCP server on http://localhost:3000/mcp'));
 
 `zod` describes the arguments of a tool; the MCP SDK installs it.
 
-These are the tools of the [example](example.html): `show_packing_list` opens the app; `add_item`, `read_list` and
-`read_counter` are called by the page; `add_items` is called by the model in a later turn, and the open app picks
-up the change through `read_list`.
+These are the tools of the [example](example.html), in three groups:
+
+- `show_chart` opens the app. The description of a tool is what the model reads to decide when to call it: write
+  it for the model.
+- `update_chart`, `highlight_points` and `read_chart_selection` are normal tools for later turns. The first two
+  change what the server holds, and the open app picks the change up through `read_chart`. The third gives the
+  model what the user selected.
+- `read_chart` and `select_point` are called by the page only. The app reads the chart every second with the
+  first, and records what the user tapped with the second.
+
+The chart is one object for everybody, which is enough to try it. A real server keeps one for each user or
+conversation.
 
 ## Connect it to a chat host
 
@@ -152,7 +222,7 @@ The host must reach your server over HTTPS. While developing, a tunnel in front 
 add the address ending in `/mcp` as a custom connector in the host. In Claude: Settings, Connectors, Add custom
 connector.
 
-Ask the model for the packing list: it calls `show_packing_list` and the app opens in the conversation.
+Ask the model to draw a chart of some numbers: it calls `show_chart` and the app opens in the conversation.
 
 ## Things that go wrong
 

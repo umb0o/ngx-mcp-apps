@@ -77,12 +77,18 @@ describe('ngx-mcp-apps-builder:application', () => {
     expect(existsSync(join(fixture, 'dist/plain.html'))).toBe(false);
   });
 
-  it('fails when the application uses lazy loading', () => {
+  it('merges lazy chunks into the single file', () => {
     const { status, output } = ngBuild('--configuration', 'lazy');
-    expect(status).not.toBe(0);
-    expect(output).toMatch(/cannot use lazy loading/);
-    expect(output).toMatch(/dynamic import\(\): chunk-[A-Z0-9]+\.js/);
-    expect(output).toMatch(/import statically: chunk-[A-Z0-9]+\.js/);
-    expect(existsSync(join(fixture, 'dist/lazy.html'))).toBe(false);
+    expect(status, output).toBe(0);
+    expect(output).toMatch(/\d+ JavaScript chunks? merged into the file \(\d+ loaded on demand/);
+    expect(output).toMatch(/Single file: dist\/lazy\.html/);
+
+    const html = readFileSync(join(fixture, 'dist/lazy.html'), 'utf8');
+    // One module, with the application that was to be loaded on demand inside, and nothing left to fetch
+    expect(html.match(/<script type="module">/g)).toHaveLength(1);
+    expect(html).toContain('fixture-count');
+    expect(html).not.toMatch(LOCAL_ASSET);
+    expect(html).not.toMatch(/import\(\s*["'`]\.\/chunk-/);
+    expect(html).not.toMatch(/from\s*["'`]\.\/chunk-/);
   });
 });

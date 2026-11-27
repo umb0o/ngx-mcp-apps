@@ -389,27 +389,6 @@ export class App {
         }
       }
     });
-    // Once: what this host says about its theme, kept on the server to learn how hosts differ
-    let reported = false;
-    effect(() => {
-      if (reported || !this.mcp.connected()) return;
-      reported = true;
-      const ctx = this.mcp.hostContext();
-      const variables = ctx?.styles?.variables ?? {};
-      void this.mcp
-        .callServerTool('chart_debug', {
-          report: JSON.stringify({
-            theme: ctx?.theme ?? null,
-            platform: ctx?.platform ?? null,
-            systemDark: this.system(),
-            variables: Object.keys(variables).length,
-            text: variables['--color-text-primary'] ?? null,
-            background: variables['--color-background-primary'] ?? null,
-            lightDark: CSS.supports('color', 'light-dark(#000, #fff)'),
-          }),
-        })
-        .catch(() => {});
-    });
 
     // Tell the model what is selected, silently: it reads it when the user writes the next message
     // A text, so that the effect runs when the selection changes and not at every reading of the server

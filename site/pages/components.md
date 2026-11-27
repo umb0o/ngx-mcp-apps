@@ -6,14 +6,16 @@ so what you copy is code that runs.
 
 ## Start from a whole app
 
-One file that is the entire application, written for Angular 22. Its page runs it live.
+One file that is the entire application, written for Angular 22. Its page runs it live. The chart of
+[The example](example.html) is another whole app in one file.
 
 <!-- list: one-file -->
 
 ## Or take the pieces
 
 Nine small files, one job each, for when the app grows. They work from Angular 18 and take their colours from
-the text around them, so they follow your theme without a stylesheet.
+the text around them, so they follow your theme without a stylesheet. One application uses all nine: see it
+running in [The nine pieces in one app](example.html#the-nine-pieces-in-one-app).
 
 <!-- list: pieces -->
 

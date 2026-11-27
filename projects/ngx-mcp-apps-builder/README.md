@@ -144,23 +144,24 @@ The build still succeeds, and the log lists what the single file does not contai
 
 ## Limitations
 
-### No lazy loading, no other JavaScript file
+### Lazy loading is merged, web workers are not supported
 
-One HTML file cannot fetch other chunks, so the application must end up in the scripts that
-`index.html` loads directly. If the build emits other JavaScript files that those scripts need, the
-build **fails** with an error that lists them by kind, instead of writing a file that breaks at runtime:
+One HTML file cannot fetch other chunks, and the Angular application builder always splits the code: a lazy
+route (`loadComponent` / `loadChildren`), a `@defer` block or a dynamic `import()` becomes a separate file, and
+the code shared with it becomes another. The builder puts them back together: it bundles the scripts of
+`index.html` and every chunk they load into one module, with esbuild, the bundler Angular itself uses.
 
-- files loaded with a dynamic `import()`: lazy loading. Use static imports only: no `loadComponent` /
-  `loadChildren`, no `@defer` blocks, no dynamic `import()`. A dependency can be the cause as well:
-  `provideAnimationsAsync()` loads the animations with a dynamic import;
-- shared chunks that the initial scripts import statically. Angular creates them to hold the code used
-  both by the initial scripts and by a lazy chunk, so they come together with the files above and go
-  away with them. The application builder has no public option to turn code splitting off, and the
-  builder does not try to merge chunks;
-- web worker scripts (`new Worker(new URL(…, import.meta.url))`).
+```text
+Single file: 3 JavaScript chunks merged into the file (3 loaded on demand by lazy routes, @defer blocks or import()).
+They are loaded with the app, not on demand: lazy loading still works, without its saving.
+```
 
-An application with one `browser` entry, `polyfills`, `scripts` and no dynamic import is built without
-extra chunks.
+So an application written with lazy routes builds and runs as it is, and so does a dependency that loads part of
+itself on demand (`provideAnimationsAsync()`, for example). What you do not get is what lazy loading is for: the
+whole application is in the file and is loaded at once. If the file becomes too big, remove code, not `import()`.
+
+A **web worker** (`new Worker(new URL(…, import.meta.url))`) is a separate script by nature and cannot be merged:
+the build fails and names the file. Run that code in the page.
 
 ### Images of templates are not embedded
 

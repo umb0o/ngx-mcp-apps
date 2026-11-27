@@ -36,8 +36,9 @@ bootstrapApplication(App, {
 
 `withComponentInputBinding()` is not needed for MCP: it only passes `:id` to the trip component as an input.
 
-Routes must be static. `loadComponent`, `loadChildren` and `@defer` make separate files that the single HTML file
-cannot fetch: the build fails and says why. See [The builder](builder.html).
+Lazy routes work too. `loadComponent`, `loadChildren` and `@defer` make separate files, which one HTML file cannot
+fetch, so the builder merges them back into the file: they are loaded with the app instead of on demand. This
+example uses static routes because there is nothing to gain from lazy ones here. See [The builder](builder.html).
 
 ```ts
 const routes: Routes = [
@@ -94,7 +95,7 @@ connected to a host or the host refuses, which is why the call is guarded and th
 
 ## Limits
 
-- No lazy loading: static routes only, as said above.
+- Lazy routes are merged into the file: they work, but they are loaded with the app, as said above.
 - The Back button of this example counts the navigations made inside the app and is disabled at the first one. A
   step further back would leave the app, and what the host does then is up to the host.
 - The example was tried in the host of this page. Try your own app in the hosts you care about.

@@ -3,7 +3,7 @@
     <h1>Your app, inside the chat</h1>
     <p class="lede">
       When people ask an AI assistant such as Claude for something, it can answer with your app: a
-      list to tick, a chart, a booking form. It appears right in the conversation, ready to use.
+      chart, a list to tick, a booking form. It appears right in the conversation, ready to use.
     </p>
     <p class="actions">
       <a class="go" href="example.html">See a real one running</a>
@@ -13,32 +13,16 @@
 
   <div class="scene" data-scene>
     <p class="sr-only">
-      An animated demonstration with three short stories. Someone asks what to pack for Lisbon, and
-      the assistant answers with a packing list where two of four items get ticked. Someone asks how
-      sales went this quarter, and the assistant answers with a bar chart of sample data where the
-      best month is highlighted. Someone asks to book a table for Friday at 8, and the assistant
+      An animated demonstration with three short stories. Someone asks how sales went this quarter,
+      and the assistant answers with a bar chart of sample data where the best month is highlighted.
+      Someone asks what to pack for Lisbon, and the assistant answers with a packing list where two
+      of four items get ticked. Someone asks to book a table for Friday at 8, and the assistant
       answers with a choice of times; 8:00 is picked and the booking is confirmed.
     </p>
     <div class="chatwin" aria-hidden="true">
       <div class="chatwin-head"><span class="face"></span>Assistant</div>
       <div class="chatwin-body" data-body>
         <div class="story is-on">
-          <p class="ask on">What should I pack for Lisbon?</p>
-          <p class="say on">Here is a list. Tick things off as you pack.</p>
-          <div class="card pack on" data-packed="2">
-            <p class="card-title">Weekend in Lisbon</p>
-            <ul class="ticks">
-              <li class="on">Passport</li>
-              <li class="on">Phone charger</li>
-              <li>Walking shoes</li>
-              <li>Sunscreen</li>
-            </ul>
-            <div class="meter"><span></span></div>
-            <p class="card-note" data-count>2 of 4 packed</p>
-          </div>
-        </div>
-
-        <div class="story">
           <p class="ask on">How did we sell this quarter?</p>
           <p class="say on">September was the best month so far.</p>
           <div class="card chart on">
@@ -51,6 +35,22 @@
               <span class="bar" style="--h: 74%"><i></i><b>Aug</b></span>
               <span class="bar hot" style="--h: 96%"><em>48k</em><i></i><b>Sep</b></span>
             </div>
+          </div>
+        </div>
+
+        <div class="story">
+          <p class="ask on">What should I pack for Lisbon?</p>
+          <p class="say on">Here is a list. Tick things off as you pack.</p>
+          <div class="card pack on" data-packed="2">
+            <p class="card-title">Weekend in Lisbon</p>
+            <ul class="ticks">
+              <li class="on">Passport</li>
+              <li class="on">Phone charger</li>
+              <li>Walking shoes</li>
+              <li>Sunscreen</li>
+            </ul>
+            <div class="meter"><span></span></div>
+            <p class="card-note" data-count>2 of 4 packed</p>
           </div>
         </div>
 
@@ -82,8 +82,8 @@
     </div>
     <div class="scene-controls" data-controls hidden>
       <button type="button" class="toggle" data-toggle>Pause</button>
-      <button type="button" data-pick aria-pressed="true">Packing list</button>
-      <button type="button" data-pick aria-pressed="false">Sales chart</button>
+      <button type="button" data-pick aria-pressed="true">Sales chart</button>
+      <button type="button" data-pick aria-pressed="false">Packing list</button>
       <button type="button" data-pick aria-pressed="false">Table booking</button>
     </div>
   </div>
@@ -93,17 +93,17 @@
   <h2 id="uses-title">What it is good for</h2>
   <div class="uses-list">
     <div>
-      <h3>Things to do, not just read</h3>
-      <p>
-        A packing list people can tick, an order they can change. The assistant hands over something
-        that works, not a paragraph to copy somewhere else.
-      </p>
-    </div>
-    <div>
       <h3>Numbers you can see</h3>
       <p>
         A question about sales gets a chart. One look says what a long answer full of figures would
         take a minute to explain.
+      </p>
+    </div>
+    <div>
+      <h3>Things to do, not just read</h3>
+      <p>
+        A packing list people can tick, an order they can change. The assistant hands over something
+        that works, not a paragraph to copy somewhere else.
       </p>
     </div>
     <div>
