@@ -441,8 +441,46 @@ Model Context Protocol.`;
     page('reference', pageSource(lang, 'reference')),
     page('agents', pageSource(lang, 'agents')),
   ];
+  // The files each page is made of: their last commit is the date of the page in the sitemap
+  const own = (name) =>
+    lang === DEFAULT_LANG ? `docs/pages/${name}.md` : `docs/pages/${lang}/${name}.md`;
+  const inlined = (file) => [...read(file).matchAll(/<!-- source: (.+?) -->/g)].map((m) => m[1]);
+  for (const p of pages) {
+    const comp = comps.find((c) => c.key === p.key);
+    if (p.key === 'index')
+      p.files = [
+        lang === DEFAULT_LANG ? 'docs/templates/home.html' : `docs/templates/${lang}/home.html`,
+      ];
+    else if (comp)
+      p.files = [
+        comp.name === 'one-file-app'
+          ? 'docs/apps/one-file/src/main.ts'
+          : `${componentDir}/${comp.file}`,
+        ...(lang === DEFAULT_LANG ? [] : [`docs/i18n/${lang}/components.json`]),
+      ];
+    else if (p.key === 'builder')
+      p.files = [
+        lang === DEFAULT_LANG ? 'projects/ngx-mcp-apps-builder/README.md' : own('builder'),
+      ];
+    else p.files = [own(p.key), ...inlined(own(p.key))];
+  }
   return { pages, comps };
 }
+
+/**
+ * The date of the last change of some files: their last commit, or today when they have changes not committed yet.
+ * Needs the history of the repository (the deploy workflow checks it out whole).
+ * The day only: a time with its offset would publish when and where the work was done.
+ */
+const lastChange = (files) => {
+  try {
+    const quoted = files.map((file) => JSON.stringify(file)).join(' ');
+    if (execSync(`git status --porcelain -- ${quoted}`, { encoding: 'utf8' }).trim()) return today;
+    return execSync(`git log -1 --format=%cs -- ${quoted}`, { encoding: 'utf8' }).trim() || today;
+  } catch {
+    return today;
+  }
+};
 
 // ---------------------------------------------------------------- links
 
@@ -943,6 +981,8 @@ for (const lang of LANGS) {
 
 // ---------------------------------------------------------------- for search engines
 
+for (const lang of LANGS) for (const p of built[lang].pages) p.lastmod = lastChange(p.files);
+
 const today = new Date().toISOString().slice(0, 10);
 write(
   'sitemap.xml',
@@ -952,7 +992,7 @@ ${LANGS.flatMap((lang) =>
   built[lang].pages.map(
     (p) => `  <url>
     <loc>${urlOf(lang, p.key)}</loc>
-    <lastmod>${today}</lastmod>
+    <lastmod>${p.lastmod}</lastmod>
 ${LANGS.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${urlOf(l, p.key)}" />`).join('\n')}
     <xhtml:link rel="alternate" hreflang="x-default" href="${urlOf(DEFAULT_LANG, p.key)}" />
   </url>`,
