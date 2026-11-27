@@ -300,6 +300,10 @@ Each of these versions was checked with a new application that uses the library 
 both the first release of the major (18.0.0, 19.0.0, ...) and its latest one: a production build, then the built page
 opened in a browser.
 
+The check is repeated automatically on every change and once a week, with the latest release of each major: a new
+application, `ng add`, a component of Angular Material, the single-file build, then the page opened in a browser.
+Run it yourself with `npm run build && npm run test:compat`.
+
 - MCP Apps protocol `2026-01-26`. A different version announced by the host is logged, and the app keeps working.
 - Automated tests run the library against the official `AppBridge`. It has been used in Claude through a custom connector.
 

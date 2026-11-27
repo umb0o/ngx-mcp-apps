@@ -10,6 +10,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test ngx-mcp-apps --watch=false && npm run test:builder",
     "test:builder": "npm run build:builder && vitest run --root projects/ngx-mcp-apps-builder",
+    "test:compat": "node scripts/compat.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -34,6 +35,7 @@
     "@types/node": "^24.19.4",
     "jsdom": "^31.0.0",
     "marked": "^18.3.0",
+    "playwright-core": "^1.65.1",
     "prettier": "^3.8.1",
     "shiki": "^4.6.0",
     "typescript": "~6.0.2",
