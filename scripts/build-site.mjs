@@ -15,6 +15,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, posix, resolve } from 'node:path';
 import { Marked } from 'marked';
 import { createHighlighter } from 'shiki';
@@ -58,6 +59,19 @@ cpSync('dist/security.html', `${out}/example/security.html`);
 cpSync('site/assets', `${out}/assets`, { recursive: true });
 cpSync('site/skill', `${out}/skill`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
+
+// A browser keeps a stylesheet or a script for a while: the address of each one carries a hash of its content, so a
+// new version of the site is never shown with the old styles
+const ASSET_VERSION = Object.fromEntries(
+  ['site.css', 'site.js', 'host.js', 'home.js'].map((name) => [
+    name,
+    createHash('sha256')
+      .update(readFileSync(`site/assets/${name}`))
+      .digest('hex')
+      .slice(0, 10),
+  ]),
+);
+const asset = (root, name) => `${root}assets/${name}?v=${ASSET_VERSION[name]}`;
 
 // ---------------------------------------------------------------- sources
 
@@ -552,8 +566,12 @@ function markdownFor(page) {
 
 // ---------------------------------------------------------------- HTML
 
+const SHIKI_CONTRAST = {
+  light: { '#D73A49': '#CF222E', '#6A737D': '#59636E', '#E36209': '#BC4C00', '#22863A': '#116329' },
+  dark: { '#6A737D': '#9198A1', '#8B949E': '#9198A1' },
+};
 const highlighter = await createHighlighter({
-  themes: ['poimandres'],
+  themes: ['github-light', 'github-dark'],
   langs: ['ts', 'js', 'json', 'bash', 'html', 'css'],
 });
 
@@ -631,8 +649,16 @@ function render(page) {
         if (!known) return `<pre><code>${escapeHtml(text)}</code></pre>\n`;
         // The comment colour of the theme is too faint on its background (WCAG 1.4.3): a lighter one
         return highlighter
-          .codeToHtml(text, { lang, theme: 'poimandres' })
-          .replace(/color:#767C9DB0/gi, 'color:#9AA3C4');
+          .codeToHtml(text, {
+            lang,
+            themes: { light: 'github-light', dark: 'github-dark' },
+            defaultColor: false,
+          })
+          .replace(/--shiki-(light|dark):(#[0-9A-Fa-f]{6,8})/g, (m, mode, colour) => {
+            // A few colours of the two themes are below 4.5:1 on our code background (WCAG 1.4.3)
+            const better = SHIKI_CONTRAST[mode][colour.toUpperCase()];
+            return better ? `--shiki-${mode}:${better}` : m;
+          });
       },
       table(token) {
         // Wide tables scroll on their own instead of widening the page
@@ -824,8 +850,8 @@ function layout(page, body, { description, faq = [] }) {
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23b80f4a'/%3E%3Crect x='3' y='4' width='10' height='8' rx='1.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="${root}assets/site.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@400..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="${asset(root, 'site.css')}" />
   </head>
   <body class="page-${page.key}">
     <a class="skip" href="#content">${t.skip}</a>
@@ -852,9 +878,9 @@ ${body}
 ${pager(page)}
       </main>
     </div>
-    <script type="module" src="${root}assets/site.js"></script>
-    ${body.includes('data-host') ? `<script type="module" src="${root}assets/host.js"></script>` : ''}
-    ${body.includes('data-scene') ? `<script type="module" src="${root}assets/home.js"></script>` : ''}
+    <script type="module" src="${asset(root, 'site.js')}"></script>
+    ${body.includes('data-host') ? `<script type="module" src="${asset(root, 'host.js')}"></script>` : ''}
+    ${body.includes('data-scene') ? `<script type="module" src="${asset(root, 'home.js')}"></script>` : ''}
   </body>
 </html>
 `;
@@ -942,7 +968,7 @@ write(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Page not found · ngx-mcp-apps</title>
     <meta name="robots" content="noindex" />
-    <link rel="stylesheet" href="/ngx-mcp-apps/assets/site.css" />
+    <link rel="stylesheet" href="/ngx-mcp-apps/assets/site.css?v=${ASSET_VERSION['site.css']}" />
   </head>
   <body>
     <main style="max-width: 40rem; margin: 4rem auto; padding: 0 1.25rem">

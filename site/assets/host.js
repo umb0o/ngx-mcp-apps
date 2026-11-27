@@ -23,7 +23,8 @@ const toolResult = (structuredContent, text = 'One contact.') => ({
 
 // The later turns of a conversation. There is no model in this page: its side is written in advance.
 // A round has the words of the user ("ask") and what the model then does ("play"). Rounds are offered
-// in order, one at a time; a round marked "once" is not offered again, the last one can be repeated.
+// in order, one at a time, each once; a round can ask to be offered again (c.again()), and after the last one the
+// conversation ends with a line that says so.
 const assistant = (c, text) => {
   c.say('bubble assistant', '', text);
   c.next();
@@ -113,6 +114,7 @@ const CHART_ROUNDS = [
   },
   {
     ask: 'Why is this one so high?',
+    once: true,
     play(c) {
       // "This one" is what the user tapped: the app recorded it on the server with select_point
       c.later(700, () => c.modelCalls('read_chart_selection'));
@@ -120,6 +122,8 @@ const CHART_ROUNDS = [
         const { chart, selected } = c.state;
         const i = chart.points.findIndex((p) => p.label === selected);
         if (i === -1) {
+          // Nothing tapped yet: the same question comes back, once a value is selected it can be answered
+          c.again();
           assistant(
             c,
             'I cannot tell which one you mean. Tap a value in the chart, then ask me again.',
@@ -326,6 +330,7 @@ function mount(stage) {
     say,
     modelCalls,
     next: () => offerRound(),
+    again: () => (round = Math.max(0, round - 1)),
     context: () => modelContext,
     addToList(items) {
       const missing = items.filter((item) => !list.items.includes(item));
@@ -338,7 +343,13 @@ function mount(stage) {
   function offerRound() {
     if (!rounds) return;
     rounds.replaceChildren();
-    const next = ROUNDS[Math.min(round, ROUNDS.length - 1)];
+    const next = ROUNDS[round];
+    if (!next) {
+      const end = document.createElement('span');
+      end.textContent = 'That is the whole conversation. Run again to start over.';
+      rounds.append(end);
+      return;
+    }
     const label = document.createElement('span');
     label.textContent = 'Say next:';
     const button = document.createElement('button');
@@ -347,7 +358,7 @@ function mount(stage) {
     button.addEventListener('click', () => {
       rounds.replaceChildren();
       say('bubble user', '', next.ask);
-      if (next.once || round < ROUNDS.length - 1) round++;
+      round++;
       next.play(turn);
     });
     rounds.append(label, button);
