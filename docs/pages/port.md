@@ -55,6 +55,19 @@ there the host opens the app when the model calls the tool.
 - Apps with zone.js and zoneless apps: the compatibility checks build new apps of Angular 18 to 22 with their own
   defaults.
 
+That test app inside Claude for Android (1.261124.19, dark theme, 334 px wide), November 2026:
+
+<p class="shots">
+  <img src="assets/screens/claude-android-material.webp" width="270" height="314" loading="lazy"
+    alt="Inside Claude for Android: the app is connected to the host, with dark theme and 334 px width, and the Angular Material form field, datepicker and dialog work." />
+  <img src="assets/screens/claude-android-fonts-images.webp" width="270" height="200" loading="lazy"
+    alt="Material Icons and the Roboto font, both embedded in the HTML file, are drawn correctly." />
+  <img src="assets/screens/claude-android-libraries.webp" width="270" height="300" loading="lazy"
+    alt="An image referenced by a template is not found, as expected; dayjs and date-fns compute the right dates and chart.js draws a bar chart." />
+  <img src="assets/screens/claude-android-remote.webp" width="270" height="211" loading="lazy"
+    alt="A Google Fonts stylesheet declared by the server loads; the app runs on an https origin of the host; 10 of 12 checks passed." />
+</p>
+
 ## What changes
 
 - **Routes.** The frame has the host's address, not yours: use `withHashLocation()`. Lazy routes and `@defer`

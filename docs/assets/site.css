@@ -1958,3 +1958,17 @@ pre :focus-visible {
 main {
   overflow-x: clip;
 }
+
+/* Screenshots from a real host, side by side when there is room */
+.shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.shots img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}

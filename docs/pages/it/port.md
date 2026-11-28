@@ -54,6 +54,19 @@ apre l'app quando il modello chiama il tool.
 - App con zone.js e app zoneless: le prove di compatibilità costruiscono app nuove di Angular dalla 18 alla 22 con le
   loro impostazioni predefinite.
 
+Quell'app di prova dentro Claude per Android (1.261124.19, tema scuro, larga 334 px), novembre 2026:
+
+<p class="shots">
+  <img src="../assets/screens/claude-android-material.webp" width="270" height="314" loading="lazy"
+    alt="Dentro Claude per Android: l'app è collegata all'host, con tema scuro e larghezza di 334 px, e campo di testo, datepicker e dialog di Angular Material funzionano." />
+  <img src="../assets/screens/claude-android-fonts-images.webp" width="270" height="200" loading="lazy"
+    alt="Le icone Material e il font Roboto, entrambi incorporati nel file HTML, si vedono correttamente." />
+  <img src="../assets/screens/claude-android-libraries.webp" width="270" height="300" loading="lazy"
+    alt="Un'immagine richiamata da un template non viene trovata, come previsto; dayjs e date-fns calcolano le date giuste e chart.js disegna un grafico a barre." />
+  <img src="../assets/screens/claude-android-remote.webp" width="270" height="211" loading="lazy"
+    alt="Un foglio di stile di Google Fonts dichiarato dal server si carica; l'app gira su un'origine https dell'host; 10 controlli su 12 passati." />
+</p>
+
 ## Cosa cambia
 
 - **Le rotte.** Il riquadro ha l'indirizzo dell'host, non il tuo: usa `withHashLocation()`. Rotte lazy e blocchi
