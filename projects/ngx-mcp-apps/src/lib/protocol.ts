@@ -55,7 +55,48 @@ export interface McpCallToolResult {
   [key: string]: unknown;
 }
 
+/** A resource as MCP returns it: text or base64 `blob`. */
+export interface McpResourceContents {
+  uri: string;
+  mimeType?: string;
+  text?: string;
+  blob?: string;
+  _meta?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface McpReadResourceResult {
+  contents: McpResourceContents[];
+  [key: string]: unknown;
+}
+
+export interface McpResource {
+  uri: string;
+  name: string;
+  title?: string;
+  description?: string;
+  mimeType?: string;
+  [key: string]: unknown;
+}
+
+export interface McpListResourcesResult {
+  resources: McpResource[];
+  nextCursor?: string;
+  [key: string]: unknown;
+}
+
+/** What `downloadFile` can hand to the host: the file itself, or a link the host fetches. */
+export type McpDownloadContent =
+  | { type: 'resource'; resource: McpResourceContents }
+  | { type: 'resource_link'; uri: string; name: string; mimeType?: string; [key: string]: unknown };
+
+/** Levels of `notifications/message` (RFC 5424 syslog severities, as in MCP). */
+export type McpLogLevel =
+  'debug' | 'info' | 'notice' | 'warning' | 'error' | 'critical' | 'alert' | 'emergency';
+
 export interface McpHostContext {
+  /** The tool call that opened this app: its JSON-RPC id and the tool definition. */
+  toolInfo?: { id?: JsonRpcId; tool: { name: string; [key: string]: unknown } };
   theme?: McpTheme;
   displayMode?: McpDisplayMode;
   availableDisplayModes?: McpDisplayMode[];
@@ -78,6 +119,9 @@ export interface McpHostCapabilities {
   updateModelContext?: Record<string, unknown>;
   message?: Record<string, unknown>;
   logging?: Record<string, unknown>;
+  sandbox?: Record<string, unknown>;
+  sampling?: Record<string, unknown>;
+  experimental?: Record<string, unknown>;
   [key: string]: unknown;
 }
 

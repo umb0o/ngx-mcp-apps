@@ -10,7 +10,7 @@
 | `connected`                                             | `true` once the handshake with the host succeeded                           |
 | `toolInput`, `toolInputPartial`                         | Arguments of the tool call that opened the app (final, and while streaming) |
 | `toolResult`, `structuredContent`                       | Result of that tool call                                                    |
-| `toolCancelled`                                         | The host cancelled the tool call                                            |
+| `toolCancelled`, `toolCancelReason`                     | The host cancelled the tool call, and why when it says so                   |
 | `hostContext`, `hostCapabilities`                       | What the host says about itself                                             |
 | `theme`                                                 | `light` or `dark`, as reported by the host                                  |
 | `displayMode`, `availableDisplayModes`, `canFullscreen` | `inline`, `fullscreen`, `pip`                                               |
@@ -18,20 +18,24 @@
 
 ### `McpApp` methods
 
-| Method                                                        | Meaning                                                                    |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `callServerTool(name, args)`                                  | Call a tool of your MCP server from the UI                                 |
-| `pollServerTool(name, { intervalMs, args, guard, injector })` | Signal that follows a server tool                                          |
-| `structuredContentAs(guard)`                                  | `structuredContent`, checked by your guard and typed                       |
-| `updateModelContext(text, structuredContent?)`                | Add context for the model's next turn, without a chat message              |
-| `sendMessage(text)`                                           | Post a user message; resolves `false` if the host refuses                  |
-| `requestDisplayMode(mode)`, `toggleFullscreen()`              | Ask the host for another display mode; resolves with the mode actually set |
-| `openLink(url)`                                               | Ask the host to open a link; resolves `false` if the host refuses          |
-| `requestTeardown()`                                           | Ask the host to close the app                                              |
-| `bridge`                                                      | The underlying `McpBridge`, for protocol methods not wrapped here          |
+| Method                                                        | Meaning                                                                                                   |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `callServerTool(name, args)`                                  | Call a tool of your MCP server from the UI                                                                |
+| `pollServerTool(name, { intervalMs, args, guard, injector })` | Signal that follows a server tool                                                                         |
+| `structuredContentAs(guard)`                                  | `structuredContent`, checked by your guard and typed                                                      |
+| `updateModelContext(text, structuredContent?)`                | Add context for the model's next turn, without a chat message                                             |
+| `sendMessage(text)`                                           | Post a user message; resolves `false` if the host refuses                                                 |
+| `requestDisplayMode(mode)`, `toggleFullscreen()`              | Ask the host for another display mode; resolves with the mode actually set                                |
+| `openLink(url)`                                               | Ask the host to open a link; resolves `false` if the host refuses                                         |
+| `requestTeardown()`                                           | Ask the host to close the app                                                                             |
+| `onTeardown(handler)`                                         | Run `handler` before the host removes the app (the host waits for it); returns a function that removes it |
+| `readServerResource(uri)`, `listServerResources(cursor?)`     | Read or list the resources of your MCP server, through the host                                           |
+| `downloadFile(contents)`                                      | Ask the host to save files for the user; resolves `false` if refused                                      |
+| `sendLog(level, data, logger?)`                               | Send a log message to the host (`notifications/message`)                                                  |
+| `bridge`                                                      | The underlying `McpBridge`, for protocol methods not wrapped here                                         |
 
-The methods that return a promise reject with an error when the app is not connected. `requestTeardown()` does
-nothing in that case, and `bridge` is `undefined` when the app runs outside a host.
+The methods that return a promise reject with an error when the app is not connected. `requestTeardown()` and
+`sendLog()` do nothing in that case, and `bridge` is `undefined` when the app runs outside a host.
 
 ### Lower-level API
 
@@ -49,15 +53,16 @@ const { hostContext } = await bridge.connect();
 
 Options of `provideMcpApp(config)`:
 
-| Option            | Default       | Meaning                                                      |
-| ----------------- | ------------- | ------------------------------------------------------------ |
-| `name`, `version` | required      | Sent to the host during the handshake                        |
-| `autoResize`      | `true`        | Tell the host the content size so the iframe fits it         |
-| `connectTimeout`  | `4000`        | Ms to wait for the host before going `standalone`            |
-| `requestTimeout`  | `60000`       | Ms to wait for an answer to a request                        |
-| `log`             | `false`       | Keep the last 50 protocol events in `events` (for debugging) |
-| `allowedOrigins`  | any           | Talk only to a parent window with one of these origins       |
-| `port`            | parent window | Custom transport, mainly for tests                           |
+| Option                  | Default       | Meaning                                                               |
+| ----------------------- | ------------- | --------------------------------------------------------------------- |
+| `name`, `version`       | required      | Sent to the host during the handshake                                 |
+| `autoResize`            | `true`        | Tell the host the content size so the iframe fits it                  |
+| `availableDisplayModes` | not sent      | Display modes the app supports, declared to the host in the handshake |
+| `connectTimeout`        | `4000`        | Ms to wait for the host before going `standalone`                     |
+| `requestTimeout`        | `60000`       | Ms to wait for an answer to a request                                 |
+| `log`                   | `false`       | Keep the last 50 protocol events in `events` (for debugging)          |
+| `allowedOrigins`        | any           | Talk only to a parent window with one of these origins                |
+| `port`                  | parent window | Custom transport, mainly for tests                                    |
 
 ## Compatibility
 

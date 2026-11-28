@@ -10,7 +10,7 @@
 | `connected`                                             | `true` quando l'handshake con l'host è riuscito                                       |
 | `toolInput`, `toolInputPartial`                         | Argomenti della chiamata al tool che ha aperto l'app (finali, e durante lo streaming) |
 | `toolResult`, `structuredContent`                       | Risultato di quella chiamata al tool                                                  |
-| `toolCancelled`                                         | L'host ha annullato la chiamata al tool                                               |
+| `toolCancelled`, `toolCancelReason`                     | L'host ha annullato la chiamata al tool, e perché quando lo dice                      |
 | `hostContext`, `hostCapabilities`                       | Ciò che l'host dice di sé                                                             |
 | `theme`                                                 | `light` o `dark`, come lo riporta l'host                                              |
 | `displayMode`, `availableDisplayModes`, `canFullscreen` | `inline`, `fullscreen`, `pip`                                                         |
@@ -18,20 +18,24 @@
 
 ### Metodi di `McpApp`
 
-| Metodo                                                        | Significato                                                                                   |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `callServerTool(name, args)`                                  | Chiama un tool del tuo server MCP dall'interfaccia                                            |
-| `pollServerTool(name, { intervalMs, args, guard, injector })` | Signal che segue un tool del server                                                           |
-| `structuredContentAs(guard)`                                  | `structuredContent`, controllato dalla tua guard e tipizzato                                  |
-| `updateModelContext(text, structuredContent?)`                | Aggiunge contesto per il prossimo turno del modello, senza un messaggio in chat               |
-| `sendMessage(text)`                                           | Pubblica un messaggio dell'utente; si risolve con `false` se l'host rifiuta                   |
-| `requestDisplayMode(mode)`, `toggleFullscreen()`              | Chiede all'host un'altra modalità di visualizzazione; si risolve con quella impostata davvero |
-| `openLink(url)`                                               | Chiede all'host di aprire un link; si risolve con `false` se l'host rifiuta                   |
-| `requestTeardown()`                                           | Chiede all'host di chiudere l'app                                                             |
-| `bridge`                                                      | Il `McpBridge` sottostante, per i metodi del protocollo non incapsulati qui                   |
+| Metodo                                                        | Significato                                                                                                 |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `callServerTool(name, args)`                                  | Chiama un tool del tuo server MCP dall'interfaccia                                                          |
+| `pollServerTool(name, { intervalMs, args, guard, injector })` | Signal che segue un tool del server                                                                         |
+| `structuredContentAs(guard)`                                  | `structuredContent`, controllato dalla tua guard e tipizzato                                                |
+| `updateModelContext(text, structuredContent?)`                | Aggiunge contesto per il prossimo turno del modello, senza un messaggio in chat                             |
+| `sendMessage(text)`                                           | Pubblica un messaggio dell'utente; si risolve con `false` se l'host rifiuta                                 |
+| `requestDisplayMode(mode)`, `toggleFullscreen()`              | Chiede all'host un'altra modalità di visualizzazione; si risolve con quella impostata davvero               |
+| `openLink(url)`                                               | Chiede all'host di aprire un link; si risolve con `false` se l'host rifiuta                                 |
+| `requestTeardown()`                                           | Chiede all'host di chiudere l'app                                                                           |
+| `onTeardown(handler)`                                         | Esegue `handler` prima che l'host rimuova l'app (l'host lo aspetta); restituisce una funzione che lo toglie |
+| `readServerResource(uri)`, `listServerResources(cursor?)`     | Legge o elenca le risorse del tuo server MCP, passando dall'host                                            |
+| `downloadFile(contents)`                                      | Chiede all'host di salvare dei file per l'utente; si risolve con `false` se rifiuta                         |
+| `sendLog(level, data, logger?)`                               | Manda un messaggio di log all'host (`notifications/message`)                                                |
+| `bridge`                                                      | Il `McpBridge` sottostante, per i metodi del protocollo non incapsulati qui                                 |
 
 I metodi che restituiscono una promise vengono rifiutati con un errore quando l'app non è connessa. In quel caso
-`requestTeardown()` non fa niente, e `bridge` è `undefined` quando l'app gira fuori da un host.
+`requestTeardown()` e `sendLog()` non fanno niente, e `bridge` è `undefined` quando l'app gira fuori da un host.
 
 ### API di basso livello
 
@@ -50,15 +54,16 @@ const { hostContext } = await bridge.connect();
 
 Opzioni di `provideMcpApp(config)`:
 
-| Opzione           | Predefinito    | Significato                                                             |
-| ----------------- | -------------- | ----------------------------------------------------------------------- |
-| `name`, `version` | obbligatori    | Inviati all'host durante l'handshake                                    |
-| `autoResize`      | `true`         | Comunica all'host la dimensione del contenuto, così l'iframe si adatta  |
-| `connectTimeout`  | `4000`         | Ms di attesa dell'host prima di passare a `standalone`                  |
-| `requestTimeout`  | `60000`        | Ms di attesa della risposta a una richiesta                             |
-| `log`             | `false`        | Conserva gli ultimi 50 eventi del protocollo in `events` (per il debug) |
-| `allowedOrigins`  | qualsiasi      | Parla solo con una finestra padre che ha una di queste origini          |
-| `port`            | finestra padre | Trasporto personalizzato, soprattutto per i test                        |
+| Opzione                 | Predefinito    | Significato                                                                        |
+| ----------------------- | -------------- | ---------------------------------------------------------------------------------- |
+| `name`, `version`       | obbligatori    | Inviati all'host durante l'handshake                                               |
+| `autoResize`            | `true`         | Comunica all'host la dimensione del contenuto, così l'iframe si adatta             |
+| `availableDisplayModes` | non inviato    | Modi di visualizzazione supportati dall'app, dichiarati all'host nella connessione |
+| `connectTimeout`        | `4000`         | Ms di attesa dell'host prima di passare a `standalone`                             |
+| `requestTimeout`        | `60000`        | Ms di attesa della risposta a una richiesta                                        |
+| `log`                   | `false`        | Conserva gli ultimi 50 eventi del protocollo in `events` (per il debug)            |
+| `allowedOrigins`        | qualsiasi      | Parla solo con una finestra padre che ha una di queste origini                     |
+| `port`                  | finestra padre | Trasporto personalizzato, soprattutto per i test                                   |
 
 ## Compatibilità
 
