@@ -210,6 +210,7 @@ const UI = {
     pages: {
       index: ['Overview', 'ngx-mcp-apps'],
       start: ['Get started', 'Get started'],
+      port: ['Existing apps', 'Bring an existing Angular app'],
       guide: ['Working with the model', 'Working with the model'],
       routing: ['Routing', 'Routing'],
       security: ['Security', 'Security'],
@@ -254,6 +255,7 @@ const UI = {
     pages: {
       index: ['Panoramica', 'ngx-mcp-apps'],
       start: ['Inizia', 'Inizia'],
+      port: ['App esistenti', "Portare un'app Angular esistente"],
       guide: ['Lavorare con il modello', 'Lavorare con il modello'],
       routing: ['Routing', 'Routing'],
       security: ['Sicurezza', 'Sicurezza'],
@@ -433,6 +435,7 @@ Model Context Protocol.`;
   const pages = [
     page('index', homeMarkdown),
     page('start', pageSource(lang, 'start')),
+    page('port', pageSource(lang, 'port')),
     page('guide', pageSource(lang, 'guide')),
     page('routing', withSources(pageSource(lang, 'routing'))),
     page('security', withSources(pageSource(lang, 'security'))),

@@ -8,6 +8,9 @@ Until 1.0.0 the API may change between minor versions.
 
 Documentation only: no change to the packages.
 
+- **New page: Bring an existing Angular app.** What to do to move an app you already have into a chat host
+  (`ng add`, the provider, the server), what keeps working as it is, and what changes inside a host: routes, the
+  start of the app, images in templates, remote resources and API calls, width and theme, web workers.
 - **New page: A2UI inside an MCP App.** The counter of the A2UI `a2ui-in-mcpapps` sample, drawn by
   `@a2ui/angular` inside an app made with `ngx-mcp-apps` and the builder, checked in Claude for Android: when to use
   A2UI, the A2UI messages in `structuredContent`, the theme adapted to a narrow frame.
