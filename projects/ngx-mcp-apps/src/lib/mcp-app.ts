@@ -23,6 +23,9 @@ export type McpAppStatus = 'connecting' | 'connected' | 'standalone';
 const MIN_POLL_INTERVAL = 100;
 const MAX_LOG_DETAIL = 1000;
 
+const sameList = <T>(a: readonly T[], b: readonly T[]) =>
+  a.length === b.length && a.every((v, i) => v === b[i]);
+
 /** Runtime check for your own data: a hand-written type guard, typia, a valibot `is`... */
 export type McpGuard<T> = (value: unknown) => value is T;
 
@@ -71,14 +74,15 @@ export class McpApp {
   readonly toolCancelled = this._toolCancelled.asReadonly();
   readonly hostContext = this._hostContext.asReadonly();
   readonly hostCapabilities = this._hostCapabilities.asReadonly();
-  readonly theme = computed(() => this._hostContext()?.theme);
-  readonly displayMode = computed<McpDisplayMode>(
-    () => this._hostContext()?.displayMode ?? 'inline',
-  );
-  readonly availableDisplayModes = computed<McpDisplayMode[]>(
-    () => this._hostContext()?.availableDisplayModes ?? [],
-  );
-  readonly canFullscreen = computed(() => this.availableDisplayModes().includes('fullscreen'));
+  // Own signals, set only when the value changes: a host-context-changed that only resizes the frame
+  // must not wake up every view that reads the theme (a computed on the whole context would).
+  private readonly _theme = signal<McpHostContext['theme']>(undefined);
+  private readonly _displayMode = signal<McpDisplayMode>('inline');
+  private readonly _availableDisplayModes = signal<McpDisplayMode[]>([], { equal: sameList });
+  readonly theme = this._theme.asReadonly();
+  readonly displayMode = this._displayMode.asReadonly();
+  readonly availableDisplayModes = this._availableDisplayModes.asReadonly();
+  readonly canFullscreen = computed(() => this._availableDisplayModes().includes('fullscreen'));
   /** Protocol event log, newest first (only when `log: true`). */
   readonly events = this._events.asReadonly();
 
@@ -127,7 +131,7 @@ export class McpApp {
       const ctx = this.sanitizedContext(p, 'host-context');
       if (!ctx) return;
       this.log('host-context', ctx);
-      this._hostContext.update((prev) => ({ ...prev, ...ctx }));
+      this.setHostContext({ ...this._hostContext(), ...ctx });
     });
 
     inject(DestroyRef).onDestroy(() => bridge.close());
@@ -168,7 +172,7 @@ export class McpApp {
   async requestDisplayMode(mode: McpDisplayMode): Promise<McpDisplayMode> {
     const raw = await this.require().request(Methods.requestDisplayMode, { mode });
     const r = this.checked(raw, isDisplayModeResult, 'ui/request-display-mode result');
-    this._hostContext.update((prev) => ({ ...prev, displayMode: r.mode }));
+    this.setHostContext({ ...this._hostContext(), displayMode: r.mode });
     this.log('display-mode', `${mode} → ${r.mode}`);
     return r.mode;
   }
@@ -255,7 +259,7 @@ export class McpApp {
         if (r.protocolVersion !== PROTOCOL_VERSION)
           this.log('protocol version', `app ${PROTOCOL_VERSION}, host ${r.protocolVersion}`);
         this._hostCapabilities.set(r.hostCapabilities);
-        this._hostContext.set(this.sanitizedContext(r.hostContext, 'host context') ?? {});
+        this.setHostContext(this.sanitizedContext(r.hostContext, 'host context') ?? {});
         this._status.set('connected');
         this.log('connected', { host: r.hostInfo, capabilities: r.hostCapabilities });
         if ((this.config.autoResize ?? true) && typeof ResizeObserver !== 'undefined')
@@ -265,6 +269,14 @@ export class McpApp {
         clearTimeout(timeout);
         this.standalone(e instanceof Error ? e.message : String(e));
       });
+  }
+
+  /** The one place the host context changes, so the signals derived from it never disagree with it. */
+  private setHostContext(ctx: McpHostContext): void {
+    this._hostContext.set(ctx);
+    this._theme.set(ctx.theme);
+    this._displayMode.set(ctx.displayMode ?? 'inline');
+    this._availableDisplayModes.set(ctx.availableDisplayModes ?? []);
   }
 
   /** Notifications: an invalid message is dropped and logged. */

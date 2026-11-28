@@ -1,4 +1,4 @@
-import { Injector } from '@angular/core';
+import { Component, Injector, afterEveryRender, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AppBridge } from '@modelcontextprotocol/ext-apps/app-bridge';
 import { McpPort } from './bridge';
@@ -108,6 +108,46 @@ describe('McpApp host notifications', () => {
     expect(app.events().some((e) => e.includes('host-context: invalid fields dropped theme'))).toBe(
       true,
     );
+  });
+
+  it('does not re-render a view that reads the theme when only the frame size changes', async () => {
+    const { port, send } = host({ theme: 'light' });
+    const a = app(port);
+    let renders = 0;
+    @Component({
+      template: `<p>{{ mcp.theme() }} {{ mcp.displayMode() }} {{ mcp.canFullscreen() }}</p>`,
+    })
+    class ThemeView {
+      readonly mcp = inject(McpApp);
+      constructor() {
+        afterEveryRender(() => renders++);
+      }
+    }
+    const fixture = TestBed.createComponent(ThemeView);
+    fixture.autoDetectChanges();
+    await until(() => a.connected());
+    await fixture.whenStable();
+    const before = renders;
+
+    for (let width = 300; width < 305; width++)
+      send({
+        jsonrpc: '2.0',
+        method: 'ui/notifications/host-context-changed',
+        params: { containerDimensions: { width } },
+      });
+    await until(() => a.hostContext()?.containerDimensions?.width === 304);
+    await fixture.whenStable();
+    expect(renders).toBe(before);
+
+    send({
+      jsonrpc: '2.0',
+      method: 'ui/notifications/host-context-changed',
+      params: { theme: 'dark' },
+    });
+    await until(() => a.theme() === 'dark');
+    await fixture.whenStable();
+    expect(renders).toBe(before + 1);
+    expect(fixture.nativeElement.textContent).toContain('dark inline false');
   });
 
   it('resets toolCancelled when a new tool call arrives', async () => {

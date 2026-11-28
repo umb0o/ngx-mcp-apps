@@ -6,10 +6,18 @@ Until 1.0.0 the API may change between minor versions.
 
 ## [Unreleased]
 
+- **`ngx-mcp-apps`: fewer renders on host context changes.** `theme`, `displayMode` and `availableDisplayModes`
+  are now signals of their own, set only when their value changes. A `host-context-changed` that only resizes the
+  frame no longer schedules a render of every view that reads the theme. In a measured turn (50 streamed
+  arguments, a result, 30 context changes) the app went from 84 to 56 renders. Same values, same API.
+
+- **Repository layout:** `projects/` holds only the two packages; the documentation site, its templates and its
+  example applications live in `docs/` (`docs/build.mjs` builds it). The README GIF is served by the site.
+
 - The documentation site is in English and Italian (`/it/`), with a language switch, `hreflang`, a sitemap,
   canonical addresses, social previews, structured data (schema.org) and a questions section on the home.
 
-Documentation only: no change to the packages.
+Apart from the render fix above, documentation only.
 
 ### Changed
 
