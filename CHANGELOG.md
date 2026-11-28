@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
+## [Unreleased]
+
+Documentation only: no change to the packages.
+
+- **New page: A2UI inside an MCP App.** The counter of the A2UI `a2ui-in-mcpapps` sample, drawn by
+  `@a2ui/angular` inside an app made with `ngx-mcp-apps` and the builder, checked in Claude for Android: when to use
+  A2UI, the A2UI messages in `structuredContent`, the theme adapted to a narrow frame.
+
 ## [0.4.0] - 2026-11-28
 
 `ngx-mcp-apps` now covers every message that the view side of MCP Apps (2026-01-26) defines.
