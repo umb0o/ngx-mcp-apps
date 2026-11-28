@@ -4,7 +4,10 @@ import {
   isCallToolResult,
   isDisplayModeResult,
   isInitializeResult,
+  isListResourcesResult,
+  isReadResourceResult,
   isRefusableResult,
+  isToolCancelledParams,
   isToolInputParams,
   sanitizeHostContext,
 } from './guards';
@@ -12,8 +15,12 @@ import { MCP_APP_CONFIG } from './mcp-app.config';
 import {
   McpCallToolResult,
   McpDisplayMode,
+  McpDownloadContent,
   McpHostCapabilities,
   McpHostContext,
+  McpListResourcesResult,
+  McpLogLevel,
+  McpReadResourceResult,
   Methods,
   PROTOCOL_VERSION,
 } from './protocol';
@@ -55,6 +62,8 @@ export class McpApp {
   private readonly _toolInputPartial = signal<Record<string, unknown> | undefined>(undefined);
   private readonly _toolResult = signal<McpCallToolResult | undefined>(undefined);
   private readonly _toolCancelled = signal(false);
+  private readonly _toolCancelReason = signal<string | undefined>(undefined);
+  private readonly teardownHandlers = new Set<() => unknown>();
   private readonly _hostContext = signal<McpHostContext | undefined>(undefined);
   private readonly _hostCapabilities = signal<McpHostCapabilities | undefined>(undefined);
   private readonly _events = signal<string[]>([]);
@@ -72,6 +81,8 @@ export class McpApp {
   readonly structuredContent = computed(() => this._toolResult()?.structuredContent);
   /** True if the host cancelled the tool call. */
   readonly toolCancelled = this._toolCancelled.asReadonly();
+  /** Why the host cancelled the tool call, when it says so (e.g. "user action", "timeout"). */
+  readonly toolCancelReason = this._toolCancelReason.asReadonly();
   readonly hostContext = this._hostContext.asReadonly();
   readonly hostCapabilities = this._hostCapabilities.asReadonly();
   // Own signals, set only when the value changes: a host-context-changed that only resizes the frame
@@ -99,6 +110,9 @@ export class McpApp {
       port,
       { name: this.config.name, version: this.config.version },
       {
+        appCapabilities: this.config.availableDisplayModes
+          ? { availableDisplayModes: this.config.availableDisplayModes }
+          : {},
         timeout: this.config.requestTimeout,
         onError: (e, method) =>
           this.log(`${method} handler failed`, e instanceof Error ? e.message : e),
@@ -110,7 +124,7 @@ export class McpApp {
     bridge.onNotification(Methods.toolInput, (p: unknown) => {
       if (!this.valid(p, isToolInputParams, 'tool-input')) return;
       this.log('tool-input', p.arguments);
-      this._toolCancelled.set(false);
+      this.clearCancelled();
       this._toolInput.set(p.arguments ?? {});
     });
     bridge.onNotification(Methods.toolInputPartial, (p: unknown) => {
@@ -120,12 +134,26 @@ export class McpApp {
     bridge.onNotification(Methods.toolResult, (p: unknown) => {
       if (!this.valid(p, isCallToolResult, 'tool-result')) return;
       this.log('tool-result', p.structuredContent);
-      this._toolCancelled.set(false);
+      this.clearCancelled();
       this._toolResult.set(p);
     });
-    bridge.onNotification(Methods.toolCancelled, (p) => {
+    bridge.onNotification(Methods.toolCancelled, (p: unknown) => {
       this.log('tool-cancelled', p);
+      // A cancellation counts even with a malformed reason: the reason alone is dropped
+      this._toolCancelReason.set(isToolCancelledParams(p) ? p?.reason : undefined);
       this._toolCancelled.set(true);
+    });
+    // The host waits for the answer before removing the app: the handlers can save first
+    bridge.onRequest(Methods.resourceTeardown, async () => {
+      this.log('teardown');
+      for (const handler of [...this.teardownHandlers]) {
+        try {
+          await handler();
+        } catch (e) {
+          this.log('teardown handler failed', e instanceof Error ? e.message : e);
+        }
+      }
+      return {};
     });
     bridge.onNotification(Methods.hostContextChanged, (p: unknown) => {
       const ctx = this.sanitizedContext(p, 'host-context');
@@ -189,6 +217,44 @@ export class McpApp {
   /** Asks the host to close this app. */
   requestTeardown(): void {
     this.bridge?.notify(Methods.requestTeardown, {});
+  }
+
+  /**
+   * Runs `handler` when the host is about to remove the app (`ui/resource-teardown`), e.g. to save state.
+   * The host waits until every handler has finished. Returns a function that removes the handler.
+   */
+  onTeardown(handler: () => unknown): () => void {
+    this.teardownHandlers.add(handler);
+    return () => this.teardownHandlers.delete(handler);
+  }
+
+  /** Reads a resource of the MCP server, through the host (needs the `serverResources` capability). */
+  async readServerResource(uri: string): Promise<McpReadResourceResult> {
+    const raw = await this.require().request(Methods.readResource, { uri });
+    return this.checked(raw, isReadResourceResult, 'resources/read result');
+  }
+
+  /** Lists the resources of the MCP server, through the host. Pass `nextCursor` to get the next page. */
+  async listServerResources(cursor?: string): Promise<McpListResourcesResult> {
+    const raw = await this.require().request(
+      Methods.listResources,
+      cursor === undefined ? {} : { cursor },
+    );
+    return this.checked(raw, isListResourcesResult, 'resources/list result');
+  }
+
+  /**
+   * Asks the host to save files for the user (needs the `downloadFile` capability).
+   * False if the host refused or the user cancelled.
+   */
+  async downloadFile(contents: McpDownloadContent[]): Promise<boolean> {
+    const raw = await this.require().request(Methods.downloadFile, { contents });
+    return !this.checked(raw, isRefusableResult, 'ui/download-file result').isError;
+  }
+
+  /** Sends a log message to the host (`notifications/message`; hosts that declare `logging` keep it). */
+  sendLog(level: McpLogLevel, data: unknown, logger?: string): void {
+    this.bridge?.notify(Methods.log, { level, data, ...(logger === undefined ? {} : { logger }) });
   }
 
   /**
@@ -269,6 +335,11 @@ export class McpApp {
         clearTimeout(timeout);
         this.standalone(e instanceof Error ? e.message : String(e));
       });
+  }
+
+  private clearCancelled(): void {
+    this._toolCancelled.set(false);
+    this._toolCancelReason.set(undefined);
   }
 
   /** The one place the host context changes, so the signals derived from it never disagree with it. */

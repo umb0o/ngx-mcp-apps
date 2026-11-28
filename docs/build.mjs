@@ -983,9 +983,9 @@ for (const lang of LANGS) {
 
 // ---------------------------------------------------------------- for search engines
 
-for (const lang of LANGS) for (const p of built[lang].pages) p.lastmod = lastChange(p.files);
-
+// Before the dates of the pages: lastChange falls back to it for files with uncommitted changes
 const today = new Date().toISOString().slice(0, 10);
+for (const lang of LANGS) for (const p of built[lang].pages) p.lastmod = lastChange(p.files);
 write(
   'sitemap.xml',
   `<?xml version="1.0" encoding="UTF-8"?>

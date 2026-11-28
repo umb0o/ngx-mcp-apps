@@ -4,29 +4,46 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Until 1.0.0 the API may change between minor versions.
 
-## [Unreleased]
+## [0.4.0] - 2026-11-28
 
-- **`ngx-mcp-apps`: fewer renders on host context changes.** `theme`, `displayMode` and `availableDisplayModes`
-  are now signals of their own, set only when their value changes. A `host-context-changed` that only resizes the
-  frame no longer schedules a render of every view that reads the theme. In a measured turn (50 streamed
-  arguments, a result, 30 context changes) the app went from 84 to 56 renders. Same values, same API.
+`ngx-mcp-apps` now covers every message that the view side of MCP Apps (2026-01-26) defines.
+`ngx-mcp-apps-builder` has no change: its version moves with the library.
 
-- **Repository layout:** `projects/` holds only the two packages; the documentation site, its templates and its
-  example applications live in `docs/` (`docs/build.mjs` builds it). The README GIF is served by the site.
+### Added
 
-- The documentation site is in English and Italian (`/it/`), with a language switch, `hreflang`, a sitemap,
-  canonical addresses, social previews, structured data (schema.org) and a questions section on the home.
-
-Apart from the render fix above, documentation only.
+- **`onTeardown(handler)`.** The host asks before it removes the app (`ui/resource-teardown`) and waits for the
+  answer: the handlers run first, so the app can save its state. A handler that fails is logged and does not stop
+  the others. Returns a function that removes the handler.
+- **`toolCancelReason`**, the reason the host gives when it cancels the tool call (for example "user action"),
+  cleared together with `toolCancelled` by the next call.
+- **`readServerResource(uri)` and `listServerResources(cursor?)`**, to read the resources of the MCP server through
+  the host (`resources/read`, `resources/list`). Their results are checked like every other answer.
+- **`downloadFile(contents)`**, to ask the host to save files for the user (`ui/download-file`); `false` if the host
+  refuses or the user cancels.
+- **`sendLog(level, data, logger?)`**, a log message for the host (`notifications/message`).
+- **`availableDisplayModes` in `provideMcpApp`**: the display modes the app supports, declared to the host in the
+  handshake (`appCapabilities`).
+- Types: `toolInfo` in the host context (the tool call that opened the app, checked by the guard), the `sandbox`,
+  `sampling` and `experimental` host capabilities, `McpReadResourceResult`, `McpListResourcesResult`,
+  `McpDownloadContent`, `McpLogLevel`.
 
 ### Changed
 
+- **Fewer renders on host context changes.** `theme`, `displayMode` and `availableDisplayModes` are now signals of
+  their own, set only when their value changes. A `host-context-changed` that only resizes the frame no longer
+  schedules a render of every view that reads the theme. In a measured turn (50 streamed arguments, a result, 30
+  context changes) the app went from 84 to 56 renders. Same values, same API.
+- The library is about 14 KB minified and about 5 KB gzipped (it was about 13 KB and under 5 KB).
 - **A shorter README**, on the usual pattern: what it is, badges, the quick start, the packages, links to the
   documentation, development. The detailed sections (API, configuration, security, compatibility, limits) moved to
   the documentation site, where they are now kept.
 - The README of the builder starts with install and usage, and ends with the functions it exports.
-- **Site:** every page ends with links to the previous and the next page, long pages list their sections ("On this
-  page"), and the text is set in Geist and Geist Mono.
+- **Site:** in English and Italian (`/it/`), with a language switch, `hreflang`, a sitemap, canonical addresses,
+  social previews, structured data (schema.org) and a questions section on the home. Every page ends with links to
+  the previous and the next page, long pages list their sections ("On this page"), and the text is set in Geist and
+  Geist Mono.
+- **Repository layout:** `projects/` holds only the two packages; the documentation site, its templates and its
+  example applications live in `docs/` (`docs/build.mjs` builds it). The README GIF is served by the site.
 
 ## [0.3.0] - 2026-11-27
 

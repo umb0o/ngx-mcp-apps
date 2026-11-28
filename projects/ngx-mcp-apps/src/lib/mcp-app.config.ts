@@ -1,11 +1,17 @@
 import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '@angular/core';
 import type { McpPort } from './bridge';
+import type { McpDisplayMode } from './protocol';
 
 export interface McpAppConfig {
   /** App name sent to the host during the handshake. */
   name: string;
   /** App version sent to the host during the handshake. */
   version: string;
+  /**
+   * Display modes this app supports, sent to the host during the handshake (`appCapabilities.availableDisplayModes`).
+   * Default: not sent.
+   */
+  availableDisplayModes?: McpDisplayMode[];
   /** Tell the host the content size so the iframe fits it. Default: true. */
   autoResize?: boolean;
   /** Give up connecting after this many ms and switch to standalone. Default: 4000. */

@@ -3,7 +3,10 @@ import {
   isDisplayModeResult,
   isHostContext,
   isInitializeResult,
+  isListResourcesResult,
+  isReadResourceResult,
   isRefusableResult,
+  isToolCancelledParams,
   isToolInputParams,
   sanitizeHostContext,
 } from './guards';
@@ -86,5 +89,32 @@ describe('type guards for host data', () => {
     expect(isRefusableResult({})).toBe(true);
     expect(isRefusableResult({ isError: true })).toBe(true);
     expect(isRefusableResult({ isError: 'no' })).toBe(false);
+    expect(isToolCancelledParams({ reason: 'timeout' })).toBe(true);
+    expect(isToolCancelledParams({})).toBe(true);
+    expect(isToolCancelledParams(undefined)).toBe(true);
+    expect(isToolCancelledParams({ reason: 3 })).toBe(false);
+  });
+
+  it('toolInfo in the host context', () => {
+    expect(
+      isHostContext({ toolInfo: { id: 7, tool: { name: 'show_chart', inputSchema: {} } } }),
+    ).toBe(true);
+    expect(isHostContext({ toolInfo: { tool: { name: 'show_chart' } } })).toBe(true);
+    expect(isHostContext({ toolInfo: { id: 7 } })).toBe(false);
+    expect(isHostContext({ toolInfo: { id: {}, tool: { name: 'x' } } })).toBe(false);
+  });
+
+  it('resource results', () => {
+    expect(isReadResourceResult({ contents: [{ uri: 'a', text: 'hi' }] })).toBe(true);
+    expect(isReadResourceResult({ contents: [{ uri: 'a', blob: 'aGk=', mimeType: 'x/y' }] })).toBe(
+      true,
+    );
+    expect(isReadResourceResult({ contents: [{ text: 'no uri' }] })).toBe(false);
+    expect(isReadResourceResult({})).toBe(false);
+    expect(isListResourcesResult({ resources: [{ uri: 'a', name: 'A' }], nextCursor: 'n' })).toBe(
+      true,
+    );
+    expect(isListResourcesResult({ resources: [{ uri: 'a' }] })).toBe(false);
+    expect(isListResourcesResult({ resources: [], nextCursor: 2 })).toBe(false);
   });
 });

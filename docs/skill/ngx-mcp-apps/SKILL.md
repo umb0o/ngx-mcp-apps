@@ -99,7 +99,7 @@ Hosts: Tested with Claude: claude.ai on the web and the Claude app for Android. 
 ## API in one screen
 
 Signals of `McpApp`: `status` (`connecting | connected | standalone`), `connected`, `toolInput`,
-`toolInputPartial`, `toolResult`, `structuredContent`, `toolCancelled`, `hostContext`, `hostCapabilities`, `theme`,
+`toolInputPartial`, `toolResult`, `structuredContent`, `toolCancelled`, `toolCancelReason`, `hostContext`, `hostCapabilities`, `theme`,
 `displayMode`, `availableDisplayModes`, `canFullscreen`, `events`.
 
 Methods of `McpApp`:
@@ -114,8 +114,13 @@ Methods of `McpApp`:
 | `requestDisplayMode(mode)`, `toggleFullscreen()`                  | `Promise<McpDisplayMode>`                                                  |
 | `openLink(url)`                                                   | `Promise<boolean>`                                                         |
 | `requestTeardown()`                                               | `void`                                                                     |
+| `onTeardown(handler)` (the host waits for it: save state here)    | `() => void` (removes the handler)                                         |
+| `readServerResource(uri)`                                         | `Promise<McpReadResourceResult>` (`contents`)                              |
+| `listServerResources(cursor?)`                                    | `Promise<McpListResourcesResult>` (`resources`, `nextCursor?`)             |
+| `downloadFile(contents)`                                          | `Promise<boolean>`                                                         |
+| `sendLog(level, data, logger?)`                                   | `void`                                                                     |
 
-Options of `provideMcpApp`: `name`, `version` (required), `autoResize` (true), `connectTimeout` (4000),
+Options of `provideMcpApp`: `name`, `version` (required), `availableDisplayModes`, `autoResize` (true), `connectTimeout` (4000),
 `requestTimeout` (60000), `log` (false), `allowedOrigins`, `port`.
 
 ## Start from a complete app

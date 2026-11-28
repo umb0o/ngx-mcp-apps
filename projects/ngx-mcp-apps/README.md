@@ -26,8 +26,8 @@ instead of plain text. `ngx-mcp-apps` speaks the MCP Apps protocol with the host
 ## Why
 
 - **Signals.** The connection status, the data of the tool call, the host theme and the display mode are signals.
-- **Small, no dependencies.** The app side of the protocol is implemented in the library: about 13 KB minified,
-  under 5 KB gzipped, with no runtime dependencies.
+- **Small, no dependencies.** The app side of the protocol is implemented in the library: about 14 KB minified,
+  about 5 KB gzipped, with no runtime dependencies.
 - **One HTML file from `ng build`.** The builder runs Angular's own application builder, then inlines scripts,
   styles, fonts and images of the CSS.
 - **Angular 18 to 22.** Each major is checked with a new application: installed, built, opened in a browser.

@@ -414,4 +414,93 @@ describe('McpApp with the official MCP Apps host (AppBridge)', () => {
     const { host } = await setup();
     await expect(host.teardownResource({})).resolves.toEqual({});
   });
+
+  it('runs teardown handlers before answering, even if one fails', async () => {
+    const { host, app } = await setup();
+    const order: string[] = [];
+    app.onTeardown(() => {
+      throw new Error('broken');
+    });
+    app.onTeardown(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+      order.push('saved');
+    });
+    const removed = app.onTeardown(() => order.push('removed'));
+    removed();
+    await host.teardownResource({});
+    order.push('answered');
+    expect(order).toEqual(['saved', 'answered']);
+    expect(app.events().some((e) => e.includes('teardown handler failed broken'))).toBe(true);
+  });
+
+  it('keeps the reason of a cancellation and clears it on the next call', async () => {
+    const { host, app } = await setup();
+    await host.sendToolCancelled({ reason: 'user action' });
+    await until(() => app.toolCancelled());
+    expect(app.toolCancelReason()).toBe('user action');
+    await host.sendToolInput({ arguments: {} });
+    await until(() => !app.toolCancelled());
+    expect(app.toolCancelReason()).toBeUndefined();
+  });
+
+  it('reads and lists server resources through the host', async () => {
+    const { host, app } = await setup();
+    host.onreadresource = async (p) => ({
+      contents: [{ uri: p.uri, mimeType: 'text/plain', text: 'hello' }],
+    });
+    host.onlistresources = async (p) => ({
+      resources: [{ uri: 'file:///a.txt', name: 'a' }],
+      ...(p?.cursor ? {} : { nextCursor: 'page-2' }),
+    });
+    const r = await app.readServerResource('file:///a.txt');
+    expect(r.contents[0]).toEqual({ uri: 'file:///a.txt', mimeType: 'text/plain', text: 'hello' });
+    expect((await app.listServerResources()).nextCursor).toBe('page-2');
+    expect((await app.listServerResources('page-2')).nextCursor).toBeUndefined();
+  });
+
+  it('asks the host to download a file and reports a refusal', async () => {
+    const { host, app } = await setup();
+    const got: unknown[] = [];
+    host.ondownloadfile = async (p) => {
+      got.push(p.contents);
+      return { isError: got.length > 1 };
+    };
+    const file = {
+      type: 'resource' as const,
+      resource: { uri: 'file:///notes.txt', mimeType: 'text/plain', text: 'notes' },
+    };
+    expect(await app.downloadFile([file])).toBe(true);
+    expect(await app.downloadFile([file])).toBe(false);
+    expect(got[0]).toEqual([file]);
+  });
+
+  it('sends log messages and declares its display modes', async () => {
+    const { hostTransport, port } = wire();
+    const host = new AppBridge(
+      null,
+      { name: 'h', version: '1' },
+      { logging: {} },
+      { hostContext: {} },
+    );
+    const logs: unknown[] = [];
+    host.onloggingmessage = (p) => logs.push(p);
+    await host.connect(hostTransport as never);
+    TestBed.configureTestingModule({
+      providers: [
+        provideMcpApp({
+          name: 'a',
+          version: '1',
+          port,
+          autoResize: false,
+          availableDisplayModes: ['inline', 'fullscreen'],
+        }),
+      ],
+    });
+    const app = TestBed.inject(McpApp);
+    await until(() => app.connected());
+    expect(host.getAppCapabilities()?.availableDisplayModes).toEqual(['inline', 'fullscreen']);
+    app.sendLog('warning', { step: 2 }, 'chart');
+    await until(() => logs.length === 1);
+    expect(logs[0]).toEqual({ level: 'warning', data: { step: 2 }, logger: 'chart' });
+  });
 });

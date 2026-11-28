@@ -10,6 +10,10 @@ import {
   McpHostContext,
   McpImplementation,
   McpInitializeResult,
+  McpListResourcesResult,
+  McpReadResourceResult,
+  McpResource,
+  McpResourceContents,
 } from './protocol';
 
 type Guard<T> = (v: unknown) => v is T;
@@ -68,7 +72,13 @@ export function isHostContext(v: unknown): v is McpHostContext {
   const dims = v['containerDimensions'];
   const insets = v['safeAreaInsets'];
   const styles = v['styles'];
+  const toolInfo = v['toolInfo'];
   return (
+    (toolInfo === undefined ||
+      (isObject(toolInfo) &&
+        isObject(toolInfo['tool']) &&
+        isString(toolInfo['tool']['name']) &&
+        (toolInfo['id'] === undefined || isString(toolInfo['id']) || isNumber(toolInfo['id'])))) &&
     optional(oneOf(THEMES))(v['theme']) &&
     optional(isDisplayMode)(v['displayMode']) &&
     optional(arrayOf(isDisplayMode))(v['availableDisplayModes']) &&
@@ -117,6 +127,34 @@ export function isInitializeResult(v: unknown): v is McpInitializeResult {
     isHostCapabilities(v['hostCapabilities']) &&
     isObject(v['hostContext'])
   );
+}
+
+function isResourceContents(v: unknown): v is McpResourceContents {
+  return (
+    isObject(v) &&
+    isString(v['uri']) &&
+    optional(isString)(v['mimeType']) &&
+    optional(isString)(v['text']) &&
+    optional(isString)(v['blob'])
+  );
+}
+
+export function isReadResourceResult(v: unknown): v is McpReadResourceResult {
+  return isObject(v) && arrayOf(isResourceContents)(v['contents']);
+}
+
+export function isListResourcesResult(v: unknown): v is McpListResourcesResult {
+  return (
+    isObject(v) &&
+    arrayOf(
+      (r: unknown): r is McpResource => isObject(r) && isString(r['uri']) && isString(r['name']),
+    )(v['resources']) &&
+    optional(isString)(v['nextCursor'])
+  );
+}
+
+export function isToolCancelledParams(v: unknown): v is { reason?: string } {
+  return v === undefined || (isObject(v) && optional(isString)(v['reason']));
 }
 
 export function isToolInputParams(v: unknown): v is { arguments?: Record<string, unknown> } {
